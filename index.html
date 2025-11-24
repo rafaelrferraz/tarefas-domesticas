@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tarefas de Casa</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d6efd">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; padding-bottom: 100px; user-select: none; }
+        .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .task-item:active { transform: scale(0.98); background: #e9ecef; }
+        .score-big { font-size: 2rem; font-weight: bold; }
+        .meta-small { font-size: 0.8rem; color: #6c757d; }
+        /* Botão Flutuante de Horas */
+        .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-3">
+    <div class="score-card mb-4">
+        <div class="row text-center">
+            <div class="col border-end">
+                <small class="text-uppercase text-muted fw-bold">Rafael</small>
+                <div class="score-big text-primary" id="score-raf">-</div>
+                <div class="meta-small">Meta: <span id="meta-raf">-%</span></div>
+            </div>
+            <div class="col">
+                <small class="text-uppercase text-muted fw-bold">Larissa</small>
+                <div class="score-big text-danger" id="score-lar">-</div>
+                <div class="meta-small">Meta: <span id="meta-lar">-%</span></div>
+            </div>
+        </div>
+        <div class="text-center mt-2">
+            <button onclick="carregarDados()" class="btn btn-sm btn-light text-muted">🔄 Atualizar</button>
+        </div>
+    </div>
+
+    <h6 class="text-muted ms-2 mb-3">REGISTRAR TAREFA</h6>
+    <div id="lista-tarefas">
+        <div class="text-center py-5 text-muted">Carregando tarefas...</div>
+    </div>
+</div>
+
+<button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
+
+<div class="modal fade" id="modalTask" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <h5 id="modal-title" class="mb-4 fw-bold">...</h5>
+                <div class="d-grid gap-2">
+                    <button onclick="enviar('Rafael')" class="btn btn-outline-primary btn-lg py-3">👱‍♂️ Rafael</button>
+                    <button onclick="enviar('Larissa')" class="btn btn-outline-danger btn-lg py-3">👩 Larissa</button>
+                    <button onclick="enviar('Lígia')" class="btn btn-secondary py-2">🧹 Lígia (Contratada)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalHoras" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Horas Externas</h5>
+            </div>
+            <div class="modal-body">
+                <select id="horas-user" class="form-select mb-3">
+                    <option value="Rafael">Rafael</option>
+                    <option value="Larissa">Larissa</option>
+                </select>
+                <input type="number" id="horas-valor" class="form-control mb-3" placeholder="Ex: 40">
+                <button onclick="enviarHoras()" class="btn btn-primary w-100">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ==========================================
+    // 🚨 COLE SEU LINK AQUI EMBAIXO
+    const API_URL = "https://script.google.com/macros/s/AKfycbwTGq5UYRRT9wSXtu58XKpm96nP-Vc_aHjA09q8-p2v3XDmuebqeG9WHN27dzO1A_I/exec";
+    // ==========================================
+
+    let selectedTask = null;
+    let selectedWeight = 0;
+    const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
+    const modalHoras = new bootstrap.Modal(document.getElementById('modalHoras'));
+
+    // Carregar
+    async function carregarDados() {
+        try {
+            // Tarefas
+            const res1 = await fetch(`${API_URL}?action=getTasks`);
+            const tarefas = await res1.json();
+            
+            const div = document.getElementById('lista-tarefas');
+            div.innerHTML = tarefas.map(t => `
+                <div class="task-item d-flex justify-content-between align-items-center" 
+                     onclick="abrirTask('${t.tarefa}', ${t.peso})">
+                    <span class="fw-medium">${t.tarefa}</span>
+                    <span class="badge bg-light text-dark border">${t.peso}</span>
+                </div>
+            `).join('');
+
+            // Score
+            const res2 = await fetch(`${API_URL}?action=getScore`);
+            const score = await res2.json();
+            
+            document.getElementById('score-raf').innerText = score.Rafael.score;
+            document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
+            
+            document.getElementById('score-lar').innerText = score.Larissa.score;
+            document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
+
+        } catch (e) { console.error(e); alert('Erro ao carregar. Verifique conexão.'); }
+    }
+
+    // Ações
+    function abrirTask(nome, peso) {
+        selectedTask = nome;
+        selectedWeight = peso;
+        document.getElementById('modal-title').innerText = nome;
+        modalTask.show();
+    }
+
+    function abrirModalHoras() { modalHoras.show(); }
+
+    function enviar(user) {
+        const score = (user === 'Lígia') ? 0 : selectedWeight;
+        doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
+        modalTask.hide();
+    }
+
+    function enviarHoras() {
+        const user = document.getElementById('horas-user').value;
+        const val = document.getElementById('horas-valor').value;
+        doPost({ action: 'registerHours', user: user, hours: val });
+        modalHoras.hide();
+    }
+
+    function doPost(payload) {
+        // Feedback visual rápido
+        const originalText = document.getElementById('score-raf').innerText;
+        document.getElementById('score-raf').innerText = "⏳";
+        
+        fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors", // OBRIGATÓRIO PARA APPS SCRIPT
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            setTimeout(carregarDados, 1500); // Recarrega após 1.5s
+        }).catch(e => alert('Erro ao salvar: ' + e));
+    }
+
+    // Service Worker Register
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+
+    // Init
+    carregarDados();
+</script>
+</body>
+</html>
