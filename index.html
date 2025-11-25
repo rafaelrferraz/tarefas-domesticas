@@ -95,7 +95,8 @@
             <div class="modal-body">
                 <label class="form-label text-muted small">NOME DA TAREFA</label>
                 <input type="text" id="edit-name" class="form-control mb-3 fw-bold">
-                
+                <label class="form-label text-muted small">TEMPO (MINUTOS)</label>
+                <input type="number" id="add-time" class="form-control mb-3" placeholder="Ex: 10">
                 <label class="form-label text-muted small">PESO (PONTOS)</label>
                 <input type="number" id="edit-weight" class="form-control mb-4">
                 
@@ -275,9 +276,10 @@
 
     function adicionarTarefa() {
         const nome = document.getElementById('add-name').value.trim();
+        const tempo = document.getElementById('add-time').value;
         const peso = document.getElementById('add-weight').value;
         
-        if (!nome || !peso) {
+        if (!nome || !tempo || !peso) {
             alert('Preencha todos os campos');
             return;
         }
@@ -290,6 +292,7 @@
         doPost({
             action: 'addTask',
             taskName: nome,
+            time: tempo,
             weight: peso
         });
         
