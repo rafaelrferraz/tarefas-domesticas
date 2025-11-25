@@ -14,7 +14,6 @@
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
         .score-big { font-size: 2rem; font-weight: bold; }
         .meta-small { font-size: 0.8rem; color: #6c757d; }
-        /* Botão Flutuante de Horas */
         .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
     </style>
 </head>
@@ -45,8 +44,11 @@
     </div>
 </div>
 
+<!-- Botões Flutuantes -->
+<button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
+<!-- Modal de Registrar Tarefa -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -62,6 +64,7 @@
     </div>
 </div>
 
+<!-- Modal de Horas -->
 <div class="modal fade" id="modalHoras" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -79,6 +82,8 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Edição -->
 <div class="modal fade" id="modalEdit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -100,23 +105,40 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Adicionar Tarefa -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">➕ Adicionar Nova Tarefa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label text-muted small">NOME DA TAREFA</label>
+                <input type="text" id="add-name" class="form-control mb-3 fw-bold" placeholder="Ex: Limpar vidros">
+                
+                <label class="form-label text-muted small">PESO (PONTOS)</label>
+                <input type="number" id="add-weight" class="form-control mb-4" placeholder="Ex: 5">
+                
+                <button onclick="adicionarTarefa()" class="btn btn-success w-100 py-2 fw-bold">ADICIONAR TAREFA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ==========================================
-    // 🚨 COLE SEU LINK AQUI EMBAIXO
     const API_URL = "https://script.google.com/macros/s/AKfycbwTGq5UYRRT9wSXtu58XKpm96nP-Vc_aHjA09q8-p2v3XDmuebqeG9WHN27dzO1A_I/exec";
-    // ==========================================
 
-    // --- 1. INICIALIZAÇÃO E VARIÁVEIS GLOBAIS ---
     let selectedTask = null;
     let selectedWeight = 0;
     
-    // Inicializa os Modais do Bootstrap
     const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
     const modalHoras = new bootstrap.Modal(document.getElementById('modalHoras'));
     const modalEdit = new bootstrap.Modal(document.getElementById('modalEdit'));
+    const modalAdd = new bootstrap.Modal(document.getElementById('modalAdd'));
 
-    // Registra o Service Worker (PWA)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
@@ -125,10 +147,8 @@
         });
     }
 
-    // --- 2. CARREGAR DADOS DA API ---
     async function carregarDados() {
         try {
-            // A. Buscar Tarefas
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefas = await res1.json();
             
@@ -137,7 +157,6 @@
             if(tarefas.length === 0) {
                 div.innerHTML = '<div class="text-center py-5 text-muted">Tudo feito por hoje! 🎉</div>';
             } else {
-                // Desenha a lista com o botão de Lápis
                 div.innerHTML = tarefas.map(t => `
                     <div class="task-item d-flex justify-content-between align-items-center" 
                          onclick="abrirTask('${t.tarefa}', ${t.peso})">
@@ -147,16 +166,22 @@
                             <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
                         </div>
 
-                        <button class="btn btn-sm btn-light border text-muted" 
-                                style="z-index: 2;" 
-                                onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.peso})">
-                            ✏️
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-light border text-muted" 
+                                    style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.peso})">
+                                ✏️
+                            </button>
+                            <button class="btn btn-sm btn-danger border" 
+                                    style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             }
 
-            // B. Buscar Placar
             const res2 = await fetch(`${API_URL}?action=getScore`);
             const score = await res2.json();
             
@@ -167,14 +192,10 @@
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
         } catch (e) { 
-            console.error(e); 
-            // Opcional: alert('Erro de conexão');
+            console.error(e);
         }
     }
 
-    // --- 3. AÇÕES DE USUÁRIO (ABRIR MODAIS) ---
-
-    // Abre Modal de Registrar Conclusão
     function abrirTask(nome, peso) {
         selectedTask = nome;
         selectedWeight = peso;
@@ -182,12 +203,10 @@
         modalTask.show();
     }
 
-    // Abre Modal de Horas
     function abrirModalHoras() { 
         modalHoras.show(); 
     }
 
-    // Abre Modal de Edição (Preenche os dados atuais)
     function abrirEdicao(nome, peso) {
         document.getElementById('edit-original-name').value = nome;
         document.getElementById('edit-name').value = nome;
@@ -195,9 +214,12 @@
         modalEdit.show();
     }
 
-    // --- 4. ENVIO DE DADOS (POST) ---
+    function abrirModalAdd() {
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-weight').value = '';
+        modalAdd.show();
+    }
 
-    // Enviar Conclusão de Tarefa
     function enviar(user) {
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         
@@ -209,11 +231,9 @@
         });
         
         modalTask.hide();
-        // Otimista: remove da tela visualmente ou recarrega
         setTimeout(carregarDados, 500); 
     }
 
-    // Enviar Horas Externas
     function enviarHoras() {
         const user = document.getElementById('horas-user').value;
         const val = document.getElementById('horas-valor').value;
@@ -227,13 +247,11 @@
         modalHoras.hide();
     }
 
-    // Enviar Edição de Tarefa
     function salvarEdicao() {
         const original = document.getElementById('edit-original-name').value;
         const novoNome = document.getElementById('edit-name').value;
         const novoPeso = document.getElementById('edit-weight').value;
         
-        // Feedback visual no botão
         const btn = document.querySelector('#modalEdit button');
         const textoOriginal = btn.innerText;
         btn.innerText = "Salvando...";
@@ -246,7 +264,6 @@
             newWeight: novoPeso 
         });
         
-        // Reseta e fecha após delay
         setTimeout(() => {
             modalEdit.hide();
             btn.innerText = textoOriginal;
@@ -255,20 +272,56 @@
         }, 1000);
     }
 
-    // --- 5. FUNÇÃO CENTRAL DE COMUNICAÇÃO (FETCH) ---
+    function adicionarTarefa() {
+        const nome = document.getElementById('add-name').value.trim();
+        const peso = document.getElementById('add-weight').value;
+        
+        if (!nome || !peso) {
+            alert('Preencha todos os campos');
+            return;
+        }
+        
+        const btn = document.querySelector('#modalAdd button');
+        const textoOriginal = btn.innerText;
+        btn.innerText = "Adicionando...";
+        btn.disabled = true;
+        
+        doPost({
+            action: 'addTask',
+            taskName: nome,
+            weight: peso
+        });
+        
+        setTimeout(() => {
+            modalAdd.hide();
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            carregarDados();
+        }, 1000);
+    }
+
+    function removerTarefa(nome) {
+        if (!confirm(`Tem certeza que deseja remover "${nome}"?`)) return;
+        
+        doPost({
+            action: 'deleteTask',
+            taskName: nome
+        });
+        
+        setTimeout(carregarDados, 1000);
+    }
+
     function doPost(payload) {
-        // Feedback simples de carregamento no placar
         const scoreRaf = document.getElementById('score-raf');
         if(scoreRaf) scoreRaf.innerText = "⏳";
 
         fetch(API_URL, {
             method: "POST",
-            mode: "no-cors", // OBRIGATÓRIO PARA APPS SCRIPT WEBAPP
+            mode: "no-cors",
             headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(payload)
         })
         .then(() => {
-            // Aguarda um pouco para o Google processar antes de recarregar
             setTimeout(carregarDados, 1500);
         })
         .catch(e => {
@@ -277,7 +330,6 @@
         });
     }
 
-    // Inicia o App carregando dados
     carregarDados();
 </script>
 </body>
