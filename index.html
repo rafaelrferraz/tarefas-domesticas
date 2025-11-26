@@ -171,8 +171,7 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-light border text-muted" 
                                     style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.peso})">
-                                ✏️
+                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo}, ${t.peso})">                                ✏️
                             </button>
                             <button class="btn btn-sm btn-danger border" 
                                     style="z-index: 2;" 
@@ -209,12 +208,13 @@
         modalHoras.show(); 
     }
 
-    function abrirEdicao(nome, peso) {
-        document.getElementById('edit-original-name').value = nome;
-        document.getElementById('edit-name').value = nome;
-        document.getElementById('edit-weight').value = peso;
-        modalEdit.show();
-    }
+    function abrirEdicao(nome, tempo, peso) {
+    document.getElementById('edit-original-name').value = nome;
+    document.getElementById('edit-name').value = nome;
+    document.getElementById('edit-time').value = tempo;
+    document.getElementById('edit-weight').value = peso;
+    modalEdit.show();
+}
 
     function abrirModalAdd() {
         document.getElementById('add-name').value = '';
@@ -252,6 +252,7 @@
     function salvarEdicao() {
         const original = document.getElementById('edit-original-name').value;
         const novoNome = document.getElementById('edit-name').value;
+        const novoTempo = document.getElementById('edit-time').value;
         const novoPeso = document.getElementById('edit-weight').value;
         
         const btn = document.querySelector('#modalEdit button');
@@ -260,11 +261,12 @@
         btn.disabled = true;
 
         doPost({ 
-            action: 'editTask', 
-            originalName: original, 
-            newName: novoNome, 
-            newWeight: novoPeso 
-        });
+        action: 'editTask', 
+        originalName: original, 
+        newName: novoNome,
+        newTime: novoTempo,
+        newWeight: novoPeso 
+    });
         
         setTimeout(() => {
             modalEdit.hide();
