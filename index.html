@@ -238,17 +238,43 @@
     }
 
     function enviarHoras() {
-        const user = document.getElementById('horas-user').value;
-        const val = document.getElementById('horas-valor').value;
-        
-        doPost({ 
+    const user = document.getElementById('horas-user').value;
+    const val = document.getElementById('horas-valor').value;
+    
+    if (!val || val <= 0) {
+        alert('Digite um valor válido');
+        return;
+    }
+    
+    const btn = document.querySelector('#modalHoras button');
+    btn.innerText = "Salvando...";
+    btn.disabled = true;
+    
+    fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ 
             action: 'registerHours', 
             user: user, 
             hours: val 
-        });
-        
+        })
+    })
+    .then(() => {
+        // Como é no-cors, não recebe resposta
+        // Mostra mensagem genérica
+        alert('Horas registradas! Se houver erro, você verá na próxima vez.');
         modalHoras.hide();
-    }
+        btn.innerText = "Salvar";
+        btn.disabled = false;
+        setTimeout(carregarDados, 1000);
+    })
+    .catch(e => {
+        alert('Erro ao salvar');
+        btn.innerText = "Salvar";
+        btn.disabled = false;
+    });
+}
 
     function salvarEdicao() {
         const original = document.getElementById('edit-original-name').value;
