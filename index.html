@@ -45,11 +45,9 @@
     </div>
 </div>
 
-<!-- Botões Flutuantes -->
 <button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
-<!-- Modal de Registrar Tarefa -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -65,7 +63,6 @@
     </div>
 </div>
 
-<!-- Modal de Horas -->
 <div class="modal fade" id="modalHoras" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -84,7 +81,6 @@
     </div>
 </div>
 
-<!-- Modal de Edição -->
 <div class="modal fade" id="modalEdit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -99,16 +95,13 @@
                 <input type="number" id="edit-time" class="form-control mb-3">
                 <label class="form-label text-muted small">PESO (PONTOS)</label>
                 <input type="number" id="edit-weight" class="form-control mb-4">
-                
                 <input type="hidden" id="edit-original-name">
-                
                 <button onclick="salvarEdicao()" class="btn btn-success w-100 py-2 fw-bold">SALVAR ALTERAÇÕES</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal de Adicionar Tarefa -->
 <div class="modal fade" id="modalAdd" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -123,7 +116,6 @@
                 <input type="number" id="add-time" class="form-control mb-3" placeholder="Ex: 10">
                 <label class="form-label text-muted small">PESO (PONTOS)</label>
                 <input type="number" id="add-weight" class="form-control mb-4" placeholder="Ex: 5">
-                
                 <button onclick="adicionarTarefa()" class="btn btn-success w-100 py-2 fw-bold">ADICIONAR TAREFA</button>
             </div>
         </div>
@@ -162,7 +154,7 @@
             } else {
                 div.innerHTML = tarefas.map(t => `
                     <div class="task-item d-flex justify-content-between align-items-center" 
-                         onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo || 0}, ${t.peso})">
+                         onclick="abrirTask('${t.tarefa}', ${t.peso})">
                         
                         <div class="d-flex align-items-center">
                             <span class="fw-medium">${t.tarefa}</span>
@@ -172,7 +164,8 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-light border text-muted" 
                                     style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo}, ${t.peso})">                                ✏️
+                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo || 0}, ${t.peso})">
+                                ✏️
                             </button>
                             <button class="btn btn-sm btn-danger border" 
                                     style="z-index: 2;" 
@@ -195,6 +188,7 @@
 
         } catch (e) { 
             console.error(e);
+            alert('Erro ao carregar dados. Verifique sua internet.');
         }
     }
 
@@ -210,15 +204,16 @@
     }
 
     function abrirEdicao(nome, tempo, peso) {
-    document.getElementById('edit-original-name').value = nome;
-    document.getElementById('edit-name').value = nome;
-    document.getElementById('edit-time').value = tempo;
-    document.getElementById('edit-weight').value = peso;
-    modalEdit.show();
-}
+        document.getElementById('edit-original-name').value = nome;
+        document.getElementById('edit-name').value = nome;
+        document.getElementById('edit-time').value = tempo;
+        document.getElementById('edit-weight').value = peso;
+        modalEdit.show();
+    }
 
     function abrirModalAdd() {
         document.getElementById('add-name').value = '';
+        document.getElementById('add-time').value = '';
         document.getElementById('add-weight').value = '';
         modalAdd.show();
     }
@@ -237,44 +232,47 @@
         setTimeout(carregarDados, 500); 
     }
 
-    function enviarHoras() {
-    const user = document.getElementById('horas-user').value;
-    const val = document.getElementById('horas-valor').value;
-    
-    if (!val || val <= 0) {
-        alert('Digite um valor válido');
-        return;
+    async function enviarHoras() {
+        const user = document.getElementById('horas-user').value;
+        const val = document.getElementById('horas-valor').value;
+        
+        if (!val || val <= 0) {
+            alert('Digite um valor válido');
+            return;
+        }
+        
+        const btn = document.querySelector('#modalHoras button');
+        btn.innerText = "Salvando...";
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    action: 'registerHours', 
+                    user: user, 
+                    hours: val 
+                })
+            });
+            
+            const result = await res.json();
+            
+            if (result.status === 'error') {
+                alert(result.message);
+            } else {
+                alert('Horas registradas com sucesso!');
+                modalHoras.hide();
+                setTimeout(carregarDados, 500);
+            }
+        } catch (e) {
+            alert('Erro ao salvar');
+            console.error(e);
+        } finally {
+            btn.innerText = "Salvar";
+            btn.disabled = false;
+        }
     }
-    
-    const btn = document.querySelector('#modalHoras button');
-    btn.innerText = "Salvando...";
-    btn.disabled = true;
-    
-    fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ 
-            action: 'registerHours', 
-            user: user, 
-            hours: val 
-        })
-    })
-    .then(() => {
-        // Como é no-cors, não recebe resposta
-        // Mostra mensagem genérica
-        alert('Horas registradas! Se houver erro, você verá na próxima vez.');
-        modalHoras.hide();
-        btn.innerText = "Salvar";
-        btn.disabled = false;
-        setTimeout(carregarDados, 1000);
-    })
-    .catch(e => {
-        alert('Erro ao salvar');
-        btn.innerText = "Salvar";
-        btn.disabled = false;
-    });
-}
 
     function salvarEdicao() {
         const original = document.getElementById('edit-original-name').value;
@@ -288,12 +286,12 @@
         btn.disabled = true;
 
         doPost({ 
-        action: 'editTask', 
-        originalName: original, 
-        newName: novoNome,
-        newTime: novoTempo,
-        newWeight: novoPeso 
-    });
+            action: 'editTask', 
+            originalName: original, 
+            newName: novoNome,
+            newTime: novoTempo,
+            newWeight: novoPeso 
+        });
         
         setTimeout(() => {
             modalEdit.hide();
@@ -350,8 +348,7 @@
 
         fetch(API_URL, {
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         })
         .then(() => {
@@ -365,7 +362,5 @@
 
     carregarDados();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </body>
 </html>
