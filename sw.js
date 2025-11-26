@@ -1,6 +1,6 @@
 const CACHE_NAME = 'tarefas-v1';
 const ASSETS = [
-  './',               // <--- IMPORTANTE: Adicionei isso. Representa a "raiz" do site.
+  './',
   './index.html',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
@@ -13,8 +13,19 @@ self.addEventListener('install', (e) => {
   );
 });
 
+self.addEventListener('activate', (e) => {
+  self.clients.claim();
+});
+
+// Não intercepta chamadas à API, só cache de assets
 self.addEventListener('fetch', (e) => {
-  // Estratégia: Tenta o Cache primeiro, se não tiver, vai pra Internet
+  // Se for API (Worker Cloudflare), deixa passar direto pra rede!
+  if (
+    e.request.url.startsWith('https://misty-rain-cbc7.rafaelrferraz.workers.dev')
+    || e.request.url.includes('/exec')
+  ) {
+    return; // não responde com cache!
+  }
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request))
   );
