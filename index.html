@@ -162,7 +162,7 @@
             } else {
                 div.innerHTML = tarefas.map(t => `
                     <div class="task-item d-flex justify-content-between align-items-center" 
-                         onclick="abrirTask('${t.tarefa}', ${t.peso})">
+                         onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo || 0}, ${t.peso})">
                         
                         <div class="d-flex align-items-center">
                             <span class="fw-medium">${t.tarefa}</span>
