@@ -13,7 +13,7 @@
         .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        .task-blocked { pointer-events: none; opacity: 0.4; filter: grayscale(100%); }
+        .task-blocked { pointer-events: none; opacity: 0.5; filter: grayscale(100%); background-color: #e9ecef; }
         .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
         .task-future .fw-medium { color: #6c757d; }
         .score-big { font-size: 2rem; font-weight: bold; }
@@ -145,8 +145,9 @@
     let selectedTask = null;
     let selectedWeight = 0;
     let tarefasCache = [];
-    // MANTENDO A LÓGICA DE LISTA NEGRA QUE FUNCIONAVA (persistente até o servidor confirmar)
-    let tarefasBloqueadas = []; 
+    
+    // SIMPLIFICAÇÃO: Apenas bloqueio temporário de UI, sem persistência complexa
+    let bloqueioTemporario = []; 
     
     const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
     const modalLigia = new bootstrap.Modal(document.getElementById('modalLigia'));
@@ -165,24 +166,18 @@
         const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
         try {
+            // 1. Busca dados novos
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
             
-            // LOGICA INTELIGENTE ORIGINAL (que você aprovou):
-            // Remove da lista negra apenas se:
-            // 1. Sumiu da lista (foi deletada/filtrada)
-            // 2. Virou futura (foi processada)
-            tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
-                const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
-                
-                if (!tarefaNaLista) return false; // Sumiu, libera
-                if (tarefaNaLista.status === 'futura') return false; // Processou, libera
-                
-                return true; // Ainda pendente, MANTÉM bloqueado
-            });
-
+            // 2. ATUALIZA CACHE
             tarefasCache = tarefasNovas;
             
+            // 3. LIMPA BLOQUEIOS ANTIGOS (O servidor já respondeu, então o estado atual é a verdade)
+            // Isso destrava qualquer coisa que ficou presa como "Processando..."
+            bloqueioTemporario = []; 
+
+            // 4. FILTRAGEM
             const listaExibicao = tarefasCache.filter(t => {
                 if (mostrarFuturas) return true;
                 return t.status === 'pendente';
@@ -193,16 +188,12 @@
             } else {
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
-                    const estaBloqueada = tarefasBloqueadas.includes(t.tarefa);
                     const isFutura = t.status === 'futura';
                     
                     let classes = "task-item d-flex justify-content-between align-items-center";
                     let textoExtra = "";
 
-                    if (estaBloqueada) {
-                        classes += " task-blocked";
-                        textoExtra = ' <small class="text-muted fst-italic">(Processando...)</small>';
-                    } else if (isFutura) {
+                    if (isFutura) {
                         classes += " task-future";
                         textoExtra = ' <span style="font-size:0.8em">📅</span>';
                     }
@@ -234,7 +225,9 @@
     }
 
     function abrirTask(nome, peso) {
-        if (tarefasBloqueadas.includes(nome)) return;
+        // Bloqueia clique se já estiver bloqueado temporariamente na sessão
+        if (bloqueioTemporario.includes(nome)) return;
+        
         selectedTask = nome;
         selectedWeight = peso;
         document.getElementById('modal-title').innerText = nome;
@@ -243,8 +236,12 @@
 
     function enviar(user) {
         modalTask.hide();
+        
         if (selectedTask) {
-            tarefasBloqueadas.push(selectedTask);
+            // 1. Adiciona bloqueio temporário IMEDIATO
+            bloqueioTemporario.push(selectedTask);
+            
+            // 2. Aplica estilo visual IMEDIATO
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
             const item = document.getElementById(safeId);
             if (item) {
@@ -254,12 +251,16 @@
                 if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
             }
         }
+        
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
-        setTimeout(() => { carregarDados(); }, 2500);
+        
+        // 3. Espera tempo suficiente pro Google atualizar e depois recarrega TUDO (limpando o bloqueio)
+        setTimeout(() => { 
+            carregarDados(); 
+        }, 2500);
     }
 
-    // === LÓGICA DO MODAL LÍGIA (A ÚNICA COISA NOVA) ===
     function abrirFaxina() {
         const pendentes = tarefasCache.filter(t => t.status === 'pendente');
         if (pendentes.length === 0) { alert("Nada pendente hoje!"); return; }
