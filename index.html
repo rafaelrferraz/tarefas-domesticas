@@ -228,63 +228,67 @@
     }
 
     async function carregarDados() {
-        const div = document.getElementById('lista-tarefas');
-        const mostrarFuturas = document.getElementById('toggleFuturas').checked;
+    const div = document.getElementById('lista-tarefas');
+    const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
-        try {
-            const res1 = await fetch(`${API_URL}?action=getTasks`);
-            const tarefasNovas = await res1.json();
-            
-            tarefasCache = tarefasNovas;
-            bloqueioTemporario = []; 
+    try {
+        // ADICIONA TIMESTAMP ÚNICO EM CADA REQUISIÇÃO
+        const timestamp = new Date().getTime();
+        const res1 = await fetch(`${API_URL}?action=getTasks&_=${timestamp}`);
+        const tarefasNovas = await res1.json();
+        
+        tarefasCache = tarefasNovas;
+        bloqueioTemporario = []; 
 
-            const listaExibicao = tarefasCache.filter(t => {
-                if (mostrarFuturas) return true;
-                return t.status === 'pendente';
-            });
-            
-            if(listaExibicao.length === 0) {
-                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉</div>';
-            } else {
-                div.innerHTML = listaExibicao.map(t => {
-                    const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
-                    const isFutura = t.status === 'futura';
-                    
-                    let classes = "task-item d-flex justify-content-between align-items-center";
-                    let textoExtra = "";
+        const listaExibicao = tarefasCache.filter(t => {
+            if (mostrarFuturas) return true;
+            return t.status === 'pendente';
+        });
+        
+        if(listaExibicao.length === 0) {
+            div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉</div>';
+        } else {
+            div.innerHTML = listaExibicao.map(t => {
+                const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
+                const isFutura = t.status === 'futura';
+                
+                let classes = "task-item d-flex justify-content-between align-items-center";
+                let textoExtra = "";
 
-                    if (isFutura) {
-                        classes += " task-future";
-                        textoExtra = ' <span style="font-size:0.8em">📅</span>';
-                    }
+                if (isFutura) {
+                    classes += " task-future";
+                    textoExtra = ' <span style="font-size:0.8em">📅</span>';
+                }
 
-                    return `
-                    <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
-                        <div class="d-flex align-items-center">
-                            <span class="fw-medium">${t.tarefa}${textoExtra}</span>
-                            <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-light border text-muted" style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', '${t.freq}', ${t.tempo || 0}, ${t.peso})">✏️</button>
-                            <button class="btn btn-sm btn-danger border" style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">🗑️</button>
-                        </div>
+                return `
+                <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
+                    <div class="d-flex align-items-center">
+                        <span class="fw-medium">${t.tarefa}${textoExtra}</span>
+                        <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
                     </div>
-                `}).join('');
-            }
-
-            const res2 = await fetch(`${API_URL}?action=getScore`);
-            const score = await res2.json();
-            document.getElementById('score-raf').innerText = score.Rafael.score;
-            document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
-            document.getElementById('score-lar').innerText = score.Larissa.score;
-            document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
-
-        } catch (e) { 
-            console.error("Falha:", e); 
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-light border text-muted" style="z-index: 2;" 
+                                onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', '${t.freq}', ${t.tempo || 0}, ${t.peso})">✏️</button>
+                        <button class="btn btn-sm btn-danger border" style="z-index: 2;" 
+                                onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">🗑️</button>
+                    </div>
+                </div>
+            `}).join('');
         }
+
+        // ADICIONA TIMESTAMP ÚNICO TAMBÉM NO SCORE
+        const res2 = await fetch(`${API_URL}?action=getScore&_=${timestamp}`);
+        const score = await res2.json();
+        document.getElementById('score-raf').innerText = score.Rafael.score;
+        document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
+        document.getElementById('score-lar').innerText = score.Larissa.score;
+        document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
+
+    } catch (e) { 
+        console.error("Falha:", e); 
     }
+}
+
 
     function abrirTask(nome, peso) {
         if (bloqueioTemporario.includes(nome)) return;
