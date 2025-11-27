@@ -229,33 +229,29 @@
     function enviar(user, btnElement) {
         const textoOriginal = btnElement.innerHTML;
         
-        // 1. BLOQUEIO SELETIVO: Acha a tarefa na lista de fundo e bloqueia ELA
+        // 1. BLOQUEIO ETERNO DA TAREFA (Até o reload da lista)
         if (selectedTask) {
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
             const itemNaLista = document.getElementById(safeId);
             
             if (itemNaLista) {
-                // Adiciona classe que deixa cinza e impossível de clicar
                 itemNaLista.classList.add('task-blocked');
-                
-                // Opcional: Feedback visual no texto da tarefa
+                // Opcional: texto extra
                 const textoTarefa = itemNaLista.querySelector('.fw-medium');
-                if(textoTarefa) textoTarefa.innerHTML += ' <small class="text-muted fst-italic">(Registrando...)</small>';
+                if(textoTarefa) textoTarefa.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
             }
         }
 
-        // 2. Trava os botões do modal (para evitar clique duplo no botão de enviar)
+        // 2. Trava botões do modal
         const todosBotoes = document.querySelectorAll('#modalTask .modal-body button');
         todosBotoes.forEach(btn => btn.disabled = true);
 
-        // 3. Feedback visual no botão clicado
         btnElement.innerHTML = "Enviando... <span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>";
         btnElement.classList.remove('btn-outline-primary', 'btn-outline-danger'); 
         btnElement.classList.add('btn-secondary'); 
 
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         
-        // 4. Envia para o servidor
         doPost({ 
             action: 'registerTask', 
             taskName: selectedTask, 
@@ -263,16 +259,17 @@
             score: score 
         });
         
-        // 5. Fecha o modal com um leve delay para o usuário ver que deu certo
+        // 3. Fecha o modal depois de 1s
         setTimeout(() => {
             modalTask.hide();
             
-            // Restaura os botões do modal para a próxima vez
+            // Restaura APENAS os botões do modal (para usar em OUTRAS tarefas)
             todosBotoes.forEach(btn => btn.disabled = false);
             btnElement.innerHTML = textoOriginal;
             btnElement.classList.remove('btn-secondary');
             
-            // A tarefa na lista CONTINUA bloqueada até o carregarDados rodar e redesenhar tudo
+            // NÃO DESTRAVE A TAREFA NA LISTA AQUI. DEIXE ELA TRAVADA.
+            // O carregarDados() vai rodar e substituir tudo.
             carregarDados();
         }, 1000); 
     }
