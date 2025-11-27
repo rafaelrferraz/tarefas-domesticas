@@ -417,34 +417,30 @@
     }
 
     async function enviarHoras() { 
-        const u = document.getElementById('horas-user').value; 
-        const v = document.getElementById('horas-valor').value; 
+    const u = document.getElementById('horas-user').value; 
+    const v = document.getElementById('horas-valor').value || null; // null = auto 30h
+    
+    const b = document.querySelector('#modalHoras button'); 
+    b.innerText = "Salvar..."; 
+    b.disabled = true; 
+    
+    try { 
+        await fetch(API_URL, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) 
+        }); 
         
-        if (!v || v <= 0) {
-            alert('Inválido');
-            return;
-        }
-        
-        const b = document.querySelector('#modalHoras button'); 
-        b.innerText = "Salvar..."; 
-        b.disabled = true; 
-        
-        try { 
-            await fetch(API_URL, { 
-                method: "POST", 
-                headers: { "Content-Type": "application/json" }, 
-                body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) 
-            }); 
-            modalHoras.hide(); 
-            setTimeout(carregarDados, 1000); 
-            alert('Sucesso!'); 
-        } catch(e) { 
-            alert('Erro'); 
-        } finally { 
-            b.innerText = "Salvar"; 
-            b.disabled = false; 
-        } 
-    }
+        modalHoras.hide(); 
+        setTimeout(carregarDados, 1000); 
+        alert('Registrado!'); 
+    } catch(e) { 
+        alert('Erro'); 
+    } finally { 
+        b.innerText = "Salvar"; 
+        b.disabled = false; 
+    } 
+}
 
     function salvarEdicao() { 
         const o = document.getElementById('edit-original-name').value; 
