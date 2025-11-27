@@ -146,23 +146,41 @@
         });
     }
 
-    async function carregarDados() {
+        async function carregarDados() {
         const div = document.getElementById('lista-tarefas');
         const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
         try {
-            // Só busca na rede se o cache estiver vazio OU se for chamado manualmente
-            // Para simplificar, vamos buscar sempre que chamar carregarDados() 
-            // mas o clique do toggle pode usar o cache se quiséssemos otimizar.
-            // Aqui mantendo a lógica simples: fetch sempre.
-            
             const res1 = await fetch(`${API_URL}?action=getTasks`);
-            tarefasCache = await res1.json();
+            const tarefasNovas = await res1.json();
             
-            // Filtragem no Front-end
+            // LIMPEZA DA LISTA NEGRA INTELIGENTE
+            // Se uma tarefa estava bloqueada, mas agora veio do servidor como "futura"
+            // (significa que o processamento acabou e ela foi agendada),
+            // então podemos removê-la da lista negra para ela destravar.
+            // Mas se ela ainda vier como "pendente", mantemos o bloqueio.
+            
+            // Filtramos a lista negra removendo quem já virou 'futura' na lista nova
+            tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
+                const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
+                
+                // Se não achou na lista (sumiu), pode remover do bloqueio.
+                if (!tarefaNaLista) return false;
+                
+                // Se achou e virou futura, pode remover do bloqueio.
+                if (tarefaNaLista.status === 'futura') return false;
+                
+                // Se achou e continua pendente, MANTÉM bloqueado (ainda não processou).
+                return true;
+            });
+
+            // Atualiza cache
+            tarefasCache = tarefasNovas;
+            
+            // Filtragem de Exibição
             const listaExibicao = tarefasCache.filter(t => {
-                if (mostrarFuturas) return true; // Mostra tudo
-                return t.status === 'pendente';  // Mostra só pendentes
+                if (mostrarFuturas) return true;
+                return t.status === 'pendente';
             });
             
             if(listaExibicao.length === 0) {
@@ -171,19 +189,19 @@
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
                     
-                    // Lógica de Bloqueio (Lista Negra)
                     const estaBloqueada = tarefasBloqueadas.includes(t.tarefa);
-                    
-                    // Lógica de Estilo (Futura vs Pendente)
                     const isFutura = t.status === 'futura';
                     
                     let classes = "task-item d-flex justify-content-between align-items-center";
-                    if (estaBloqueada) classes += " task-blocked";
-                    else if (isFutura) classes += " task-future";
-
                     let textoExtra = "";
-                    if (estaBloqueada) textoExtra = ' <small class="text-muted fst-italic">(Processando...)</small>';
-                    else if (isFutura) textoExtra = ' <span style="font-size:0.8em">📅</span>';
+
+                    if (estaBloqueada) {
+                        classes += " task-blocked";
+                        textoExtra = ' <small class="text-muted fst-italic">(Processando...)</small>';
+                    } else if (isFutura) {
+                        classes += " task-future";
+                        textoExtra = ' <span style="font-size:0.8em">📅</span>';
+                    }
 
                     return `
                     <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
@@ -213,6 +231,7 @@
             console.error("Falha:", e);
         }
     }
+
 
     function abrirTask(nome, peso) {
         if (tarefasBloqueadas.includes(nome)) return;
