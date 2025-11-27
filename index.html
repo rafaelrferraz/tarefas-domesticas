@@ -228,67 +228,64 @@
     }
 
     async function carregarDados() {
-    const div = document.getElementById('lista-tarefas');
-    const mostrarFuturas = document.getElementById('toggleFuturas').checked;
+        const div = document.getElementById('lista-tarefas');
+        const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
-    try {
-        // ADICIONA TIMESTAMP ÚNICO EM CADA REQUISIÇÃO
-        const timestamp = new Date().getTime();
-        const res1 = await fetch(`${API_URL}?action=getTasks&_=${timestamp}`);
-        const tarefasNovas = await res1.json();
-        
-        tarefasCache = tarefasNovas;
-        bloqueioTemporario = []; 
+        try {
+            const timestamp = new Date().getTime();
+            const res1 = await fetch(`${API_URL}?action=getTasks&_=${timestamp}`);
+            const tarefasNovas = await res1.json();
+            
+            tarefasCache = tarefasNovas;
+            bloqueioTemporario = []; 
 
-        const listaExibicao = tarefasCache.filter(t => {
-            if (mostrarFuturas) return true;
-            return t.status === 'pendente';
-        });
-        
-        if(listaExibicao.length === 0) {
-            div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉</div>';
-        } else {
-            div.innerHTML = listaExibicao.map(t => {
-                const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
-                const isFutura = t.status === 'futura';
-                
-                let classes = "task-item d-flex justify-content-between align-items-center";
-                let textoExtra = "";
+            const listaExibicao = tarefasCache.filter(t => {
+                if (mostrarFuturas) return true;
+                return t.status === 'pendente';
+            });
+            
+            if (listaExibicao.length === 0) {
+                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉</div>';
+            } else {
+                div.innerHTML = listaExibicao.map(t => {
+                    const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
+                    const isFutura = t.status === 'futura';
+                    
+                    let classes = "task-item d-flex justify-content-between align-items-center";
+                    let textoExtra = "";
 
-                if (isFutura) {
-                    classes += " task-future";
-                    textoExtra = ' <span style="font-size:0.8em">📅</span>';
-                }
+                    if (isFutura) {
+                        classes += " task-future";
+                        textoExtra = ' <span style="font-size:0.8em">📅</span>';
+                    }
 
-                return `
-                <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
-                    <div class="d-flex align-items-center">
-                        <span class="fw-medium">${t.tarefa}${textoExtra}</span>
-                        <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
+                    return `
+                    <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
+                        <div class="d-flex align-items-center">
+                            <span class="fw-medium">${t.tarefa}${textoExtra}</span>
+                            <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-light border text-muted" style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', '${t.freq}', ${t.tempo || 0}, ${t.peso})">✏️</button>
+                            <button class="btn btn-sm btn-danger border" style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">🗑️</button>
+                        </div>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-light border text-muted" style="z-index: 2;" 
-                                onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', '${t.freq}', ${t.tempo || 0}, ${t.peso})">✏️</button>
-                        <button class="btn btn-sm btn-danger border" style="z-index: 2;" 
-                                onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">🗑️</button>
-                    </div>
-                </div>
-            `}).join('');
+                `}).join('');
+            }
+
+            const res2 = await fetch(`${API_URL}?action=getScore&_=${timestamp}`);
+            const score = await res2.json();
+            document.getElementById('score-raf').innerText = score.Rafael.score;
+            document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
+            document.getElementById('score-lar').innerText = score.Larissa.score;
+            document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
+
+        } catch (e) { 
+            console.error("Falha:", e); 
         }
-
-        // ADICIONA TIMESTAMP ÚNICO TAMBÉM NO SCORE
-        const res2 = await fetch(`${API_URL}?action=getScore&_=${timestamp}`);
-        const score = await res2.json();
-        document.getElementById('score-raf').innerText = score.Rafael.score;
-        document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
-        document.getElementById('score-lar').innerText = score.Larissa.score;
-        document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
-
-    } catch (e) { 
-        console.error("Falha:", e); 
     }
-}
-
 
     function abrirTask(nome, peso) {
         if (bloqueioTemporario.includes(nome)) return;
@@ -311,7 +308,9 @@
                 item.classList.add('task-blocked');
                 item.classList.remove('task-future'); 
                 const txt = item.querySelector('.fw-medium');
-                if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
+                if (txt && !txt.innerHTML.includes('(Processando...)')) {
+                    txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
+                }
             }
         }
         
@@ -360,9 +359,20 @@
         if (!confirm(`Confirmar que Lígia fez ${selecionadas.length} tarefas?`)) return;
 
         modalLigia.hide();
-        const lista = document.getElementById('lista-tarefas');
-        lista.style.opacity = '0.3'; 
-        lista.style.pointerEvents = 'none';
+
+        // APLICA PROCESSANDO SOMENTE NAS TAREFAS SELECIONADAS
+        selecionadas.forEach(nome => {
+            const safeId = 'task-' + nome.replace(/[^a-zA-Z0-9]/g, '');
+            const item = document.getElementById(safeId);
+            if (item) {
+                item.classList.add('task-blocked');
+                item.classList.remove('task-future');
+                const txt = item.querySelector('.fw-medium');
+                if (txt && !txt.innerHTML.includes('(Processando...)')) {
+                    txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
+                }
+            }
+        });
 
         fetch(API_URL, {
             method: "POST", 
@@ -454,7 +464,7 @@
         const p = document.getElementById('add-weight').value; 
         const f = document.getElementById('add-freq').value;
         
-        if(!n) return; 
+        if (!n) return; 
         
         modalAdd.hide(); 
         doPost({ 
@@ -475,7 +485,7 @@
 
     function doPost(p) { 
         const s = document.getElementById('score-raf'); 
-        if(s) s.innerText = "⏳"; 
+        if (s) s.innerText = "⏳"; 
         
         fetch(API_URL, { 
             method: "POST", 
@@ -486,5 +496,6 @@
 
     carregarDados();
 </script>
+
 </body>
 </html>
