@@ -9,16 +9,66 @@
     <meta name="theme-color" content="#0d6efd">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; padding-bottom: 100px; user-select: none; }
-        .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        .task-blocked { pointer-events: none; opacity: 0.5; filter: grayscale(100%); background-color: #e9ecef; }
-        .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
-        .task-future .fw-medium { color: #6c757d; }
-        .score-big { font-size: 2rem; font-weight: bold; }
-        .meta-small { font-size: 0.8rem; color: #6c757d; }
-        .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
+        body { 
+            background-color: #f0f2f5; 
+            padding-bottom: 100px; 
+            user-select: none; 
+        }
+        .score-card { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 15px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+        }
+        .task-item { 
+            background: white; 
+            margin-bottom: 8px; 
+            border-radius: 10px; 
+            padding: 15px; 
+            cursor: pointer; 
+            transition: 0.1s; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        .task-item:active { 
+            transform: scale(0.98); 
+            background: #e9ecef; 
+        }
+        .task-blocked { 
+            pointer-events: none; 
+            opacity: 0.5; 
+            filter: grayscale(100%); 
+            background-color: #e9ecef; 
+        }
+        .task-future { 
+            background-color: #f8f9fa; 
+            border: 1px dashed #dee2e6; 
+            opacity: 0.8; 
+        }
+        .task-future .fw-medium { 
+            color: #6c757d; 
+        }
+        .score-big { 
+            font-size: 2rem; 
+            font-weight: bold; 
+        }
+        .meta-small { 
+            font-size: 0.8rem; 
+            color: #6c757d; 
+        }
+        .fab-hours { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 25px; 
+            font-size: 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            z-index: 1000; 
+        }
     </style>
 </head>
 <body>
@@ -173,8 +223,7 @@
             // 2. ATUALIZA CACHE
             tarefasCache = tarefasNovas;
             
-            // 3. LIMPA BLOQUEIOS ANTIGOS (O servidor já respondeu, então o estado atual é a verdade)
-            // Isso destrava qualquer coisa que ficou presa como "Processando..."
+            // 3. LIMPA BLOQUEIOS ANTIGOS
             bloqueioTemporario = []; 
 
             // 4. FILTRAGEM
@@ -221,11 +270,12 @@
             document.getElementById('score-lar').innerText = score.Larissa.score;
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
-        } catch (e) { console.error("Falha:", e); }
+        } catch (e) { 
+            console.error("Falha:", e); 
+        }
     }
 
     function abrirTask(nome, peso) {
-        // Bloqueia clique se já estiver bloqueado temporariamente na sessão
         if (bloqueioTemporario.includes(nome)) return;
         
         selectedTask = nome;
@@ -238,10 +288,8 @@
         modalTask.hide();
         
         if (selectedTask) {
-            // 1. Adiciona bloqueio temporário IMEDIATO
             bloqueioTemporario.push(selectedTask);
             
-            // 2. Aplica estilo visual IMEDIATO
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
             const item = document.getElementById(safeId);
             if (item) {
@@ -255,7 +303,6 @@
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
         
-        // 3. Espera tempo suficiente pro Google atualizar e depois recarrega TUDO (limpando o bloqueio)
         setTimeout(() => { 
             carregarDados(); 
         }, 2500);
@@ -263,7 +310,10 @@
 
     function abrirFaxina() {
         const pendentes = tarefasCache.filter(t => t.status === 'pendente');
-        if (pendentes.length === 0) { alert("Nada pendente hoje!"); return; }
+        if (pendentes.length === 0) { 
+            alert("Nada pendente hoje!"); 
+            return; 
+        }
 
         const divLista = document.getElementById('lista-ligia');
         divLista.innerHTML = pendentes.map(t => {
@@ -273,7 +323,10 @@
             return `
             <label class="list-group-item d-flex gap-3 align-items-center py-3">
                 <input class="form-check-input flex-shrink-0 fs-4" type="checkbox" value="${t.tarefa}" ${checked}>
-                <span class="pt-1 form-checked-content fw-bold">${t.tarefa}<small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small></span>
+                <span class="pt-1 form-checked-content fw-bold">
+                    ${t.tarefa}
+                    <small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small>
+                </span>
             </label>
             `;
         }).join('');
@@ -283,29 +336,133 @@
     function confirmarFaxina() {
         const checks = document.querySelectorAll('#lista-ligia input[type="checkbox"]:checked');
         const selecionadas = Array.from(checks).map(c => c.value);
-        if (selecionadas.length === 0) { alert("Selecione pelo menos uma tarefa."); return; }
+        
+        if (selecionadas.length === 0) { 
+            alert("Selecione pelo menos uma tarefa."); 
+            return; 
+        }
+        
         if (!confirm(`Confirmar que Lígia fez ${selecionadas.length} tarefas?`)) return;
 
         modalLigia.hide();
         const lista = document.getElementById('lista-tarefas');
-        lista.style.opacity = '0.3'; lista.style.pointerEvents = 'none';
+        lista.style.opacity = '0.3'; 
+        lista.style.pointerEvents = 'none';
 
         fetch(API_URL, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: 'ligiaDay', taskNames: selecionadas })
-        }).then(() => { setTimeout(() => { window.location.reload(true); }, 4000); })
-        .catch(e => { alert('Erro na faxina.'); window.location.reload(true); });
+        })
+        .then(() => { 
+            setTimeout(() => { window.location.reload(true); }, 4000); 
+        })
+        .catch(e => { 
+            alert('Erro na faxina.'); 
+            window.location.reload(true); 
+        });
     }
 
-    // Funções Auxiliares (Horas, Edit, Add, Remove)
-    function abrirModalHoras() { modalHoras.show(); }
-    function abrirModalAdd() { document.getElementById('add-name').value = ''; document.getElementById('add-time').value = ''; document.getElementById('add-weight').value = ''; modalAdd.show(); }
-    function abrirEdicao(n, t, p) { document.getElementById('edit-original-name').value = n; document.getElementById('edit-name').value = n; document.getElementById('edit-time').value = t; document.getElementById('edit-weight').value = p; modalEdit.show(); }
-    async function enviarHoras() { const u = document.getElementById('horas-user').value; const v = document.getElementById('horas-valor').value; if (!v || v <= 0) return alert('Inválido'); const b = document.querySelector('#modalHoras button'); b.innerText = "Salvar..."; b.disabled = true; try { await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) }); modalHoras.hide(); setTimeout(carregarDados, 1000); alert('Sucesso!'); } catch(e){ alert('Erro'); } finally { b.innerText = "Salvar"; b.disabled = false; } }
-    function salvarEdicao() { const o = document.getElementById('edit-original-name').value; const n = document.getElementById('edit-name').value; const t = document.getElementById('edit-time').value; const p = document.getElementById('edit-weight').value; modalEdit.hide(); doPost({ action: 'editTask', originalName: o, newName: n, newTime: t, newWeight: p }); setTimeout(carregarDados, 1500); }
-    function adicionarTarefa() { const n = document.getElementById('add-name').value; const t = document.getElementById('add-time').value; const p = document.getElementById('add-weight').value; if(!n) return; modalAdd.hide(); doPost({ action: 'addTask', taskName: n, time: t, weight: p }); setTimeout(carregarDados, 1500); }
-    function removerTarefa(n) { if (!confirm(`Remover "${n}"?`)) return; doPost({ action: 'deleteTask', taskName: n }); setTimeout(carregarDados, 1500); }
-    function doPost(p) { const s = document.getElementById('score-raf'); if(s) s.innerText = "⏳"; fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) }).catch(console.error); }
+    // Funções Auxiliares
+    function abrirModalHoras() { 
+        modalHoras.show(); 
+    }
+
+    function abrirModalAdd() { 
+        document.getElementById('add-name').value = ''; 
+        document.getElementById('add-time').value = ''; 
+        document.getElementById('add-weight').value = ''; 
+        modalAdd.show(); 
+    }
+
+    function abrirEdicao(n, t, p) { 
+        document.getElementById('edit-original-name').value = n; 
+        document.getElementById('edit-name').value = n; 
+        document.getElementById('edit-time').value = t; 
+        document.getElementById('edit-weight').value = p; 
+        modalEdit.show(); 
+    }
+
+    async function enviarHoras() { 
+        const u = document.getElementById('horas-user').value; 
+        const v = document.getElementById('horas-valor').value; 
+        
+        if (!v || v <= 0) {
+            alert('Inválido');
+            return;
+        }
+        
+        const b = document.querySelector('#modalHoras button'); 
+        b.innerText = "Salvar..."; 
+        b.disabled = true; 
+        
+        try { 
+            await fetch(API_URL, { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) 
+            }); 
+            modalHoras.hide(); 
+            setTimeout(carregarDados, 1000); 
+            alert('Sucesso!'); 
+        } catch(e) { 
+            alert('Erro'); 
+        } finally { 
+            b.innerText = "Salvar"; 
+            b.disabled = false; 
+        } 
+    }
+
+    function salvarEdicao() { 
+        const o = document.getElementById('edit-original-name').value; 
+        const n = document.getElementById('edit-name').value; 
+        const t = document.getElementById('edit-time').value; 
+        const p = document.getElementById('edit-weight').value; 
+        
+        modalEdit.hide(); 
+        doPost({ 
+            action: 'editTask', 
+            originalName: o, 
+            newName: n, 
+            newTime: t, 
+            newWeight: p 
+        }); 
+        setTimeout(carregarDados, 1500); 
+    }
+
+    function adicionarTarefa() { 
+        const n = document.getElementById('add-name').value; 
+        const t = document.getElementById('add-time').value; 
+        const p = document.getElementById('add-weight').value; 
+        
+        if(!n) return; 
+        
+        modalAdd.hide(); 
+        doPost({ 
+            action: 'addTask', 
+            taskName: n, 
+            time: t, 
+            weight: p 
+        }); 
+        setTimeout(carregarDados, 1500); 
+    }
+
+    function removerTarefa(n) { 
+        if (!confirm(`Remover "${n}"?`)) return; 
+        doPost({ action: 'deleteTask', taskName: n }); 
+        setTimeout(carregarDados, 1500); 
+    }
+
+    function doPost(p) { 
+        const s = document.getElementById('score-raf'); 
+        if(s) s.innerText = "⏳"; 
+        
+        fetch(API_URL, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify(p) 
+        }).catch(console.error); 
+    }
 
     carregarDados();
 </script>
