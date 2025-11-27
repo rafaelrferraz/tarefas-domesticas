@@ -162,7 +162,7 @@
         });
     }
 
-    async function carregarDados() {
+        async function carregarDados() {
         const div = document.getElementById('lista-tarefas');
         const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
@@ -170,12 +170,20 @@
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
             
+            // --- CORREÇÃO DA LISTA NEGRA (Retornando a lógica que funcionava) ---
             tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
                 const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
+                
+                // Se a tarefa sumiu da lista (foi deletada ou filtrada), removemos do bloqueio
                 if (!tarefaNaLista) return false;
+                
+                // Se a tarefa virou futura (já foi processada), removemos do bloqueio
                 if (tarefaNaLista.status === 'futura') return false;
+                
+                // Se ainda é pendente, mantemos o bloqueio (está processando)
                 return true;
             });
+            // --------------------------------------------------------------------
 
             tarefasCache = tarefasNovas;
             
@@ -228,6 +236,7 @@
 
         } catch (e) { console.error("Falha:", e); }
     }
+
 
     function abrirTask(nome, peso) {
         if (tarefasBloqueadas.includes(nome)) return;
