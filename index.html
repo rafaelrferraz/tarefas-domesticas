@@ -13,7 +13,7 @@
         .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        .task-blocked { pointer-events: none; opacity: 0.4; filter: grayscale(100%); }
+        .task-blocked { pointer-events: none; opacity: 0.5; filter: grayscale(100%); background-color: #e9ecef; }
         .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
         .task-future .fw-medium { color: #6c757d; }
         .score-big { font-size: 2rem; font-weight: bold; }
@@ -75,7 +75,6 @@
     </div>
 </div>
 
-<!-- Modal NOVO: Checklist Lígia -->
 <div class="modal fade" id="modalLigia" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -84,9 +83,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
-                <div id="lista-ligia" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;">
-                    <!-- Checkboxes serão gerados aqui -->
-                </div>
+                <div id="lista-ligia" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;"></div>
             </div>
             <div class="modal-footer border-top-0">
                 <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Cancelar</button>
@@ -148,7 +145,9 @@
     let selectedTask = null;
     let selectedWeight = 0;
     let tarefasCache = [];
-    let tarefasBloqueadas = []; 
+    
+    // SIMPLIFICAÇÃO: Apenas bloqueio temporário de UI, sem persistência complexa
+    let bloqueioTemporario = []; 
     
     const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
     const modalLigia = new bootstrap.Modal(document.getElementById('modalLigia'));
@@ -162,31 +161,23 @@
         });
     }
 
-        async function carregarDados() {
+    async function carregarDados() {
         const div = document.getElementById('lista-tarefas');
         const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
         try {
+            // 1. Busca dados novos
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
             
-            // --- CORREÇÃO DA LISTA NEGRA (Retornando a lógica que funcionava) ---
-            tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
-                const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
-                
-                // Se a tarefa sumiu da lista (foi deletada ou filtrada), removemos do bloqueio
-                if (!tarefaNaLista) return false;
-                
-                // Se a tarefa virou futura (já foi processada), removemos do bloqueio
-                if (tarefaNaLista.status === 'futura') return false;
-                
-                // Se ainda é pendente, mantemos o bloqueio (está processando)
-                return true;
-            });
-            // --------------------------------------------------------------------
-
+            // 2. ATUALIZA CACHE
             tarefasCache = tarefasNovas;
             
+            // 3. LIMPA BLOQUEIOS ANTIGOS (O servidor já respondeu, então o estado atual é a verdade)
+            // Isso destrava qualquer coisa que ficou presa como "Processando..."
+            bloqueioTemporario = []; 
+
+            // 4. FILTRAGEM
             const listaExibicao = tarefasCache.filter(t => {
                 if (mostrarFuturas) return true;
                 return t.status === 'pendente';
@@ -197,16 +188,12 @@
             } else {
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
-                    const estaBloqueada = tarefasBloqueadas.includes(t.tarefa);
                     const isFutura = t.status === 'futura';
                     
                     let classes = "task-item d-flex justify-content-between align-items-center";
                     let textoExtra = "";
 
-                    if (estaBloqueada) {
-                        classes += " task-blocked";
-                        textoExtra = ' <small class="text-muted fst-italic">(Processando...)</small>';
-                    } else if (isFutura) {
+                    if (isFutura) {
                         classes += " task-future";
                         textoExtra = ' <span style="font-size:0.8em">📅</span>';
                     }
@@ -237,9 +224,10 @@
         } catch (e) { console.error("Falha:", e); }
     }
 
-
     function abrirTask(nome, peso) {
-        if (tarefasBloqueadas.includes(nome)) return;
+        // Bloqueia clique se já estiver bloqueado temporariamente na sessão
+        if (bloqueioTemporario.includes(nome)) return;
+        
         selectedTask = nome;
         selectedWeight = peso;
         document.getElementById('modal-title').innerText = nome;
@@ -248,8 +236,12 @@
 
     function enviar(user) {
         modalTask.hide();
+        
         if (selectedTask) {
-            tarefasBloqueadas.push(selectedTask);
+            // 1. Adiciona bloqueio temporário IMEDIATO
+            bloqueioTemporario.push(selectedTask);
+            
+            // 2. Aplica estilo visual IMEDIATO
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
             const item = document.getElementById(safeId);
             if (item) {
@@ -259,78 +251,53 @@
                 if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
             }
         }
+        
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
-        setTimeout(() => { carregarDados(); }, 2500);
+        
+        // 3. Espera tempo suficiente pro Google atualizar e depois recarrega TUDO (limpando o bloqueio)
+        setTimeout(() => { 
+            carregarDados(); 
+        }, 2500);
     }
 
-    // === LÓGICA NOVA: MODAL LÍGIA CHECKLIST ===
     function abrirFaxina() {
-        // Pega todas as pendentes do cache
         const pendentes = tarefasCache.filter(t => t.status === 'pendente');
-        
-        if (pendentes.length === 0) {
-            alert("Nada pendente hoje!");
-            return;
-        }
+        if (pendentes.length === 0) { alert("Nada pendente hoje!"); return; }
 
         const divLista = document.getElementById('lista-ligia');
         divLista.innerHTML = pendentes.map(t => {
             const freq = Number(t.freq);
-            // Marca se for frequente (<= 7 dias) OU se for diária/sem freq (NaN)
-            // A lógica aqui é: Se frequência for maior que 7 (ex: 15, 30), vem desmarcado.
             const deveMarcar = (freq && freq <= 7) || !freq;
             const checked = deveMarcar ? 'checked' : '';
-            
             return `
             <label class="list-group-item d-flex gap-3 align-items-center py-3">
                 <input class="form-check-input flex-shrink-0 fs-4" type="checkbox" value="${t.tarefa}" ${checked}>
-                <span class="pt-1 form-checked-content fw-bold">
-                    ${t.tarefa}
-                    <small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small>
-                </span>
+                <span class="pt-1 form-checked-content fw-bold">${t.tarefa}<small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small></span>
             </label>
             `;
         }).join('');
-
         modalLigia.show();
     }
 
     function confirmarFaxina() {
-        // Coleta todas as tarefas marcadas
         const checks = document.querySelectorAll('#lista-ligia input[type="checkbox"]:checked');
         const selecionadas = Array.from(checks).map(c => c.value);
-
-        if (selecionadas.length === 0) {
-            alert("Selecione pelo menos uma tarefa.");
-            return;
-        }
-
+        if (selecionadas.length === 0) { alert("Selecione pelo menos uma tarefa."); return; }
         if (!confirm(`Confirmar que Lígia fez ${selecionadas.length} tarefas?`)) return;
 
         modalLigia.hide();
-        
-        // Feedback visual geral
         const lista = document.getElementById('lista-tarefas');
-        lista.style.opacity = '0.3';
-        lista.style.pointerEvents = 'none';
+        lista.style.opacity = '0.3'; lista.style.pointerEvents = 'none';
 
         fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: 'ligiaDay', taskNames: selecionadas })
-        })
-        .then(() => {
-            // Espera e recarrega
-            setTimeout(() => { window.location.reload(true); }, 4000);
-        })
-        .catch(e => {
-            alert('Erro na faxina.');
-            window.location.reload(true);
-        });
+        }).then(() => { setTimeout(() => { window.location.reload(true); }, 4000); })
+        .catch(e => { alert('Erro na faxina.'); window.location.reload(true); });
     }
 
-    // Funções Auxiliares
+    // Funções Auxiliares (Horas, Edit, Add, Remove)
     function abrirModalHoras() { modalHoras.show(); }
     function abrirModalAdd() { document.getElementById('add-name').value = ''; document.getElementById('add-time').value = ''; document.getElementById('add-weight').value = ''; modalAdd.show(); }
     function abrirEdicao(n, t, p) { document.getElementById('edit-original-name').value = n; document.getElementById('edit-name').value = n; document.getElementById('edit-time').value = t; document.getElementById('edit-weight').value = p; modalEdit.show(); }
