@@ -13,8 +13,12 @@
         .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        /* Classe para tarefa bloqueada (já enviada) */
+        
+        /* Estados da Tarefa */
         .task-blocked { pointer-events: none; opacity: 0.4; filter: grayscale(100%); }
+        .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
+        .task-future .fw-medium { color: #6c757d; }
+
         .score-big { font-size: 2rem; font-weight: bold; }
         .meta-small { font-size: 0.8rem; color: #6c757d; }
         .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
@@ -37,11 +41,18 @@
             </div>
         </div>
         <div class="text-center mt-2">
-            <button onclick="window.location.reload(true)" class="btn btn-sm btn-light text-muted">🔄 Atualizar</button>
+            <button onclick="window.location.reload(true)" class="btn btn-sm btn-light text-muted">🔄 Atualizar Site</button>
         </div>
     </div>
 
-    <h6 class="text-muted ms-2 mb-3">REGISTRAR TAREFA</h6>
+    <div class="d-flex justify-content-between align-items-end mb-3 ms-2 me-2">
+        <h6 class="text-muted mb-0">REGISTRAR TAREFA</h6>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="toggleFuturas" onchange="carregarDados()">
+            <label class="form-check-label small text-muted" for="toggleFuturas">Ver futuras</label>
+        </div>
+    </div>
+
     <div id="lista-tarefas">
         <div class="text-center py-5 text-muted">Carregando tarefas...</div>
     </div>
@@ -50,16 +61,16 @@
 <button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
-<!-- Modal de Registro de Tarefa -->
+<!-- Modais (Task, Horas, Edit, Add) -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-body text-center p-4">
                 <h5 id="modal-title" class="mb-4 fw-bold">...</h5>
                 <div class="d-grid gap-2">
-                    <button onclick="enviar('Rafael', this)" class="btn btn-outline-primary btn-lg py-3">👱‍♂️ Rafael</button>
-                    <button onclick="enviar('Larissa', this)" class="btn btn-outline-danger btn-lg py-3">👩 Larissa</button>
-                    <button onclick="enviar('Lígia', this)" class="btn btn-secondary py-2">🧹 Lígia</button>
+                    <button onclick="enviar('Rafael')" class="btn btn-outline-primary btn-lg py-3">👱‍♂️ Rafael</button>
+                    <button onclick="enviar('Larissa')" class="btn btn-outline-danger btn-lg py-3">👩 Larissa</button>
+                    <button onclick="enviar('Lígia')" class="btn btn-secondary py-2">🧹 Lígia</button>
                 </div>
             </div>
         </div>
@@ -69,9 +80,7 @@
 <div class="modal fade" id="modalHoras" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Horas Externas</h5>
-            </div>
+            <div class="modal-header"><h5 class="modal-title">Registrar Horas Externas</h5></div>
             <div class="modal-body">
                 <select id="horas-user" class="form-select mb-3">
                     <option value="Rafael">Rafael</option>
@@ -87,16 +96,10 @@
 <div class="modal fade" id="modalEdit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">✏️ Editar Atividade</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title fw-bold">✏️ Editar Atividade</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <label class="form-label text-muted small">NOME DA TAREFA</label>
                 <input type="text" id="edit-name" class="form-control mb-3 fw-bold">
-                <label class="form-label text-muted small">TEMPO (MINUTOS)</label>
                 <input type="number" id="edit-time" class="form-control mb-3">
-                <label class="form-label text-muted small">PESO (PONTOS)</label>
                 <input type="number" id="edit-weight" class="form-control mb-4">
                 <input type="hidden" id="edit-original-name">
                 <button onclick="salvarEdicao()" class="btn btn-success w-100 py-2 fw-bold">SALVAR ALTERAÇÕES</button>
@@ -108,16 +111,10 @@
 <div class="modal fade" id="modalAdd" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">➕ Adicionar Nova Tarefa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title fw-bold">➕ Adicionar Nova Tarefa</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <label class="form-label text-muted small">NOME DA TAREFA</label>
                 <input type="text" id="add-name" class="form-control mb-3 fw-bold" placeholder="Ex: Limpar vidros">
-                <label class="form-label text-muted small">TEMPO (MINUTOS)</label>
                 <input type="number" id="add-time" class="form-control mb-3" placeholder="Ex: 10">
-                <label class="form-label text-muted small">PESO (PONTOS)</label>
                 <input type="number" id="add-weight" class="form-control mb-4" placeholder="Ex: 5">
                 <button onclick="adicionarTarefa()" class="btn btn-success w-100 py-2 fw-bold">ADICIONAR TAREFA</button>
             </div>
@@ -132,7 +129,8 @@
     let selectedTask = null;
     let selectedWeight = 0;
     
-    // Lista negra para manter bloqueado visualmente até o servidor confirmar
+    // Cache local de tarefas para o filtro funcionar sem re-fetch
+    let tarefasCache = [];
     let tarefasBloqueadas = []; 
     
     const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
@@ -149,43 +147,55 @@
     }
 
     async function carregarDados() {
+        const div = document.getElementById('lista-tarefas');
+        const mostrarFuturas = document.getElementById('toggleFuturas').checked;
+
         try {
+            // Só busca na rede se o cache estiver vazio OU se for chamado manualmente
+            // Para simplificar, vamos buscar sempre que chamar carregarDados() 
+            // mas o clique do toggle pode usar o cache se quiséssemos otimizar.
+            // Aqui mantendo a lógica simples: fetch sempre.
+            
             const res1 = await fetch(`${API_URL}?action=getTasks`);
-            const tarefas = await res1.json();
+            tarefasCache = await res1.json();
             
-            const div = document.getElementById('lista-tarefas');
+            // Filtragem no Front-end
+            const listaExibicao = tarefasCache.filter(t => {
+                if (mostrarFuturas) return true; // Mostra tudo
+                return t.status === 'pendente';  // Mostra só pendentes
+            });
             
-            if(tarefas.length === 0) {
-                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo feito por hoje! 🎉</div>';
+            if(listaExibicao.length === 0) {
+                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉<br><small>Ative "Ver futuras" para adiantar algo.</small></div>';
             } else {
-                div.innerHTML = tarefas.map(t => {
+                div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
                     
-                    // Se estiver na lista negra, força o bloqueio visual
+                    // Lógica de Bloqueio (Lista Negra)
                     const estaBloqueada = tarefasBloqueadas.includes(t.tarefa);
-                    const classeExtra = estaBloqueada ? 'task-blocked' : '';
-                    const textoExtra = estaBloqueada ? ' <small class="text-muted fst-italic">(Processando...)</small>' : '';
+                    
+                    // Lógica de Estilo (Futura vs Pendente)
+                    const isFutura = t.status === 'futura';
+                    
+                    let classes = "task-item d-flex justify-content-between align-items-center";
+                    if (estaBloqueada) classes += " task-blocked";
+                    else if (isFutura) classes += " task-future";
+
+                    let textoExtra = "";
+                    if (estaBloqueada) textoExtra = ' <small class="text-muted fst-italic">(Processando...)</small>';
+                    else if (isFutura) textoExtra = ' <span style="font-size:0.8em">📅</span>';
 
                     return `
-                    <div id="${safeId}" class="task-item d-flex justify-content-between align-items-center ${classeExtra}" 
-                         onclick="abrirTask('${t.tarefa}', ${t.peso})">
-                        
+                    <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
                         <div class="d-flex align-items-center">
                             <span class="fw-medium">${t.tarefa}${textoExtra}</span>
                             <span class="badge bg-light text-dark border ms-2">${t.peso} pts</span>
                         </div>
-
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-light border text-muted" 
-                                    style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo || 0}, ${t.peso})">
-                                ✏️
-                            </button>
-                            <button class="btn btn-sm btn-danger border" 
-                                    style="z-index: 2;" 
-                                    onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">
-                                🗑️
-                            </button>
+                            <button class="btn btn-sm btn-light border text-muted" style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); abrirEdicao('${t.tarefa}', ${t.tempo || 0}, ${t.peso})">✏️</button>
+                            <button class="btn btn-sm btn-danger border" style="z-index: 2;" 
+                                    onclick="event.stopPropagation(); removerTarefa('${t.tarefa}')">🗑️</button>
                         </div>
                     </div>
                 `}).join('');
@@ -200,14 +210,12 @@
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
         } catch (e) { 
-            console.error("Falha no carregamento:", e);
+            console.error("Falha:", e);
         }
     }
 
     function abrirTask(nome, peso) {
-        // Previne abrir se já estiver bloqueada (redundância de segurança)
         if (tarefasBloqueadas.includes(nome)) return;
-
         selectedTask = nome;
         selectedWeight = peso;
         document.getElementById('modal-title').innerText = nome;
@@ -215,39 +223,26 @@
     }
 
     function enviar(user) {
-        // 1. Fecha o modal IMEDIATAMENTE
         modalTask.hide();
-
-        // 2. Bloqueia visualmente a tarefa na lista AGORA
         if (selectedTask) {
-            tarefasBloqueadas.push(selectedTask); // Adiciona à memória pra não sair no refresh
-            
+            tarefasBloqueadas.push(selectedTask);
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
-            const itemNaLista = document.getElementById(safeId);
-            if (itemNaLista) {
-                itemNaLista.classList.add('task-blocked');
-                const textoTarefa = itemNaLista.querySelector('.fw-medium');
-                if(textoTarefa) textoTarefa.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
+            const item = document.getElementById(safeId);
+            if (item) {
+                item.classList.add('task-blocked');
+                item.classList.remove('task-future'); // Remove estilo de futura se for o caso
+                const txt = item.querySelector('.fw-medium');
+                if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
             }
         }
-
-        const score = (user === 'Lígia') ? 0 : selectedWeight;
         
-        // 3. Envia pro servidor
-        doPost({ 
-            action: 'registerTask', 
-            taskName: selectedTask, 
-            user: user, 
-            score: score 
-        });
-
-        // 4. Espera um tempo bom (2.5s) para a planilha processar antes de atualizar a tela
-        setTimeout(() => {
-            carregarDados();
-        }, 2500);
+        const score = (user === 'Lígia') ? 0 : selectedWeight;
+        doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
+        
+        setTimeout(() => { carregarDados(); }, 2500);
     }
 
-    // ... Funções Modais Auxiliares (Horas, Edit, Add) mantidas iguais ...
+    // Funções Auxiliares (Iguais à versão simplificada anterior)
     function abrirModalHoras() { modalHoras.show(); }
     function abrirModalAdd() { 
         document.getElementById('add-name').value = ''; 
@@ -262,73 +257,53 @@
         document.getElementById('edit-weight').value = peso;
         modalEdit.show();
     }
-
-    // ... Funções de Ação (Salvar, Adicionar, Remover) ...
-    // Mantive as lógicas originais com pequenos ajustes de feedback
-    
     async function enviarHoras() {
         const user = document.getElementById('horas-user').value;
         const val = document.getElementById('horas-valor').value;
-        if (!val || val <= 0) { alert('Valor inválido'); return; }
-        
+        if (!val || val <= 0) { alert('Inválido'); return; }
         const btn = document.querySelector('#modalHoras button');
-        btn.innerText = "Salvando..."; btn.disabled = true;
-        
+        btn.innerText = "Salvar..."; btn.disabled = true;
         try {
             await fetch(API_URL, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: 'registerHours', user: user, hours: val })
             });
-            modalHoras.hide();
-            setTimeout(carregarDados, 1000);
-            alert('Sucesso!');
-        } catch (e) { alert('Erro'); } 
-        finally { btn.innerText = "Salvar"; btn.disabled = false; }
+            modalHoras.hide(); setTimeout(carregarDados, 1000); alert('Sucesso!');
+        } catch(e){ alert('Erro'); } finally { btn.innerText = "Salvar"; btn.disabled = false; }
     }
-
     function salvarEdicao() {
         const original = document.getElementById('edit-original-name').value;
         const novoNome = document.getElementById('edit-name').value;
         const novoTempo = document.getElementById('edit-time').value;
         const novoPeso = document.getElementById('edit-weight').value;
-        
-        modalEdit.hide(); // Fecha logo
+        modalEdit.hide();
         doPost({ action: 'editTask', originalName: original, newName: novoNome, newTime: novoTempo, newWeight: novoPeso });
         setTimeout(carregarDados, 1500);
     }
-
     function adicionarTarefa() {
         const nome = document.getElementById('add-name').value;
         const tempo = document.getElementById('add-time').value;
         const peso = document.getElementById('add-weight').value;
         if(!nome) return;
-
         modalAdd.hide();
         doPost({ action: 'addTask', taskName: nome, time: tempo, weight: peso });
         setTimeout(carregarDados, 1500);
     }
-
     function removerTarefa(nome) {
         if (!confirm(`Remover "${nome}"?`)) return;
         doPost({ action: 'deleteTask', taskName: nome });
         setTimeout(carregarDados, 1500);
     }
-
     function doPost(payload) {
         const scoreRaf = document.getElementById('score-raf');
         if(scoreRaf) scoreRaf.innerText = "⏳";
-
-        // Envia sem esperar resposta visual, pois já tratamos na UI
         fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         }).catch(e => console.error(e));
     }
 
     carregarDados();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </body>
 </html>
