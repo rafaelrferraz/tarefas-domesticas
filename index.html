@@ -13,12 +13,9 @@
         .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        
-        /* Estados da Tarefa */
         .task-blocked { pointer-events: none; opacity: 0.4; filter: grayscale(100%); }
         .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
         .task-future .fw-medium { color: #6c757d; }
-
         .score-big { font-size: 2rem; font-weight: bold; }
         .meta-small { font-size: 0.8rem; color: #6c757d; }
         .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
@@ -42,7 +39,7 @@
         </div>
         <div class="text-center mt-2 d-flex justify-content-center gap-2">
             <button onclick="window.location.reload(true)" class="btn btn-sm btn-light text-muted border">🔄 Atualizar Site</button>
-            <button onclick="diaDeFaxina()" class="btn btn-sm btn-light text-muted border">🧹 Lígia Day</button>
+            <button onclick="abrirFaxina()" class="btn btn-sm btn-light text-muted border">🧹 Lígia</button>
         </div>
     </div>
 
@@ -50,7 +47,7 @@
         <h6 class="text-muted mb-0">REGISTRAR TAREFA</h6>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="toggleFuturas" onchange="carregarDados()">
-            <label class="form-check-label small text-muted" for="toggleFuturas">Ver todas</label>
+            <label class="form-check-label small text-muted" for="toggleFuturas">Ver futuras</label>
         </div>
     </div>
 
@@ -62,7 +59,7 @@
 <button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
-<!-- Modais (Task, Horas, Edit, Add) -->
+<!-- Modais -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -78,10 +75,31 @@
     </div>
 </div>
 
+<!-- Modal NOVO: Checklist Lígia -->
+<div class="modal fade" id="modalLigia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">🧹 O que a Lígia fez hoje?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="lista-ligia" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;">
+                    <!-- Checkboxes serão gerados aqui -->
+                </div>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Cancelar</button>
+                <button onclick="confirmarFaxina()" class="btn btn-success fw-bold px-4">CONFIRMAR FAXINA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalHoras" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Registrar Horas Externas</h5></div>
+            <div class="modal-header"><h5 class="modal-title">Registrar Horas</h5></div>
             <div class="modal-body">
                 <select id="horas-user" class="form-select mb-3">
                     <option value="Rafael">Rafael</option>
@@ -97,13 +115,13 @@
 <div class="modal fade" id="modalEdit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title fw-bold">✏️ Editar Atividade</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title fw-bold">✏️ Editar</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <input type="text" id="edit-name" class="form-control mb-3 fw-bold">
                 <input type="number" id="edit-time" class="form-control mb-3">
                 <input type="number" id="edit-weight" class="form-control mb-4">
                 <input type="hidden" id="edit-original-name">
-                <button onclick="salvarEdicao()" class="btn btn-success w-100 py-2 fw-bold">SALVAR ALTERAÇÕES</button>
+                <button onclick="salvarEdicao()" class="btn btn-success w-100 py-2 fw-bold">SALVAR</button>
             </div>
         </div>
     </div>
@@ -112,12 +130,12 @@
 <div class="modal fade" id="modalAdd" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title fw-bold">➕ Adicionar Nova Tarefa</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title fw-bold">➕ Nova Tarefa</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <input type="text" id="add-name" class="form-control mb-3 fw-bold" placeholder="Ex: Limpar vidros">
-                <input type="number" id="add-time" class="form-control mb-3" placeholder="Ex: 10">
-                <input type="number" id="add-weight" class="form-control mb-4" placeholder="Ex: 5">
-                <button onclick="adicionarTarefa()" class="btn btn-success w-100 py-2 fw-bold">ADICIONAR TAREFA</button>
+                <input type="text" id="add-name" class="form-control mb-3 fw-bold" placeholder="Nome">
+                <input type="number" id="add-time" class="form-control mb-3" placeholder="Minutos">
+                <input type="number" id="add-weight" class="form-control mb-4" placeholder="Pontos">
+                <button onclick="adicionarTarefa()" class="btn btn-success w-100 py-2 fw-bold">ADICIONAR</button>
             </div>
         </div>
     </div>
@@ -133,13 +151,14 @@
     let tarefasBloqueadas = []; 
     
     const modalTask = new bootstrap.Modal(document.getElementById('modalTask'));
+    const modalLigia = new bootstrap.Modal(document.getElementById('modalLigia'));
     const modalHoras = new bootstrap.Modal(document.getElementById('modalHoras'));
     const modalEdit = new bootstrap.Modal(document.getElementById('modalEdit'));
     const modalAdd = new bootstrap.Modal(document.getElementById('modalAdd'));
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW falhou:', err));
+            navigator.serviceWorker.register('./sw.js').catch(console.error);
         });
     }
 
@@ -151,12 +170,11 @@
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
             
-            // Limpeza inteligente da lista negra (remove quem já foi processado e virou futura)
             tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
                 const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
-                if (!tarefaNaLista) return false; // Sumiu da lista
-                if (tarefaNaLista.status === 'futura') return false; // Processou
-                return true; // Ainda pendente (mantém bloqueio)
+                if (!tarefaNaLista) return false;
+                if (tarefaNaLista.status === 'futura') return false;
+                return true;
             });
 
             tarefasCache = tarefasNovas;
@@ -167,7 +185,7 @@
             });
             
             if(listaExibicao.length === 0) {
-                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉<br><small>Ative "Ver futuras" para adiantar algo.</small></div>';
+                div.innerHTML = '<div class="text-center py-5 text-muted">Tudo em dia! 🎉</div>';
             } else {
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
@@ -203,15 +221,12 @@
 
             const res2 = await fetch(`${API_URL}?action=getScore`);
             const score = await res2.json();
-            
             document.getElementById('score-raf').innerText = score.Rafael.score;
             document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
             document.getElementById('score-lar').innerText = score.Larissa.score;
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
-        } catch (e) { 
-            console.error("Falha:", e);
-        }
+        } catch (e) { console.error("Falha:", e); }
     }
 
     function abrirTask(nome, peso) {
@@ -240,12 +255,53 @@
         setTimeout(() => { carregarDados(); }, 2500);
     }
 
-    function diaDeFaxina() {
-        if (!confirm("DIÁRIA DA LÍGIA?\n\nIsso vai marcar TODAS as tarefas pendentes como feitas pela Lígia (0 pontos) e reagendar as datas.")) {
+    // === LÓGICA NOVA: MODAL LÍGIA CHECKLIST ===
+    function abrirFaxina() {
+        // Pega todas as pendentes do cache
+        const pendentes = tarefasCache.filter(t => t.status === 'pendente');
+        
+        if (pendentes.length === 0) {
+            alert("Nada pendente hoje!");
             return;
         }
-        const btns = document.querySelectorAll('.score-card button');
-        btns.forEach(b => b.disabled = true);
+
+        const divLista = document.getElementById('lista-ligia');
+        divLista.innerHTML = pendentes.map(t => {
+            const freq = Number(t.freq);
+            // Marca se for frequente (<= 7 dias) OU se for diária/sem freq (NaN)
+            // A lógica aqui é: Se frequência for maior que 7 (ex: 15, 30), vem desmarcado.
+            const deveMarcar = (freq && freq <= 7) || !freq;
+            const checked = deveMarcar ? 'checked' : '';
+            
+            return `
+            <label class="list-group-item d-flex gap-3 align-items-center py-3">
+                <input class="form-check-input flex-shrink-0 fs-4" type="checkbox" value="${t.tarefa}" ${checked}>
+                <span class="pt-1 form-checked-content fw-bold">
+                    ${t.tarefa}
+                    <small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small>
+                </span>
+            </label>
+            `;
+        }).join('');
+
+        modalLigia.show();
+    }
+
+    function confirmarFaxina() {
+        // Coleta todas as tarefas marcadas
+        const checks = document.querySelectorAll('#lista-ligia input[type="checkbox"]:checked');
+        const selecionadas = Array.from(checks).map(c => c.value);
+
+        if (selecionadas.length === 0) {
+            alert("Selecione pelo menos uma tarefa.");
+            return;
+        }
+
+        if (!confirm(`Confirmar que Lígia fez ${selecionadas.length} tarefas?`)) return;
+
+        modalLigia.hide();
+        
+        // Feedback visual geral
         const lista = document.getElementById('lista-tarefas');
         lista.style.opacity = '0.3';
         lista.style.pointerEvents = 'none';
@@ -253,78 +309,27 @@
         fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: 'ligiaDay' })
+            body: JSON.stringify({ action: 'ligiaDay', taskNames: selecionadas })
         })
         .then(() => {
+            // Espera e recarrega
             setTimeout(() => { window.location.reload(true); }, 4000);
         })
         .catch(e => {
             alert('Erro na faxina.');
-            lista.style.opacity = '1';
-            lista.style.pointerEvents = 'auto';
-            btns.forEach(b => b.disabled = false);
+            window.location.reload(true);
         });
     }
 
+    // Funções Auxiliares
     function abrirModalHoras() { modalHoras.show(); }
-    function abrirModalAdd() { 
-        document.getElementById('add-name').value = ''; 
-        document.getElementById('add-time').value = ''; 
-        document.getElementById('add-weight').value = ''; 
-        modalAdd.show(); 
-    }
-    function abrirEdicao(nome, tempo, peso) {
-        document.getElementById('edit-original-name').value = nome;
-        document.getElementById('edit-name').value = nome;
-        document.getElementById('edit-time').value = tempo;
-        document.getElementById('edit-weight').value = peso;
-        modalEdit.show();
-    }
-    async function enviarHoras() {
-        const user = document.getElementById('horas-user').value;
-        const val = document.getElementById('horas-valor').value;
-        if (!val || val <= 0) { alert('Inválido'); return; }
-        const btn = document.querySelector('#modalHoras button');
-        btn.innerText = "Salvar..."; btn.disabled = true;
-        try {
-            await fetch(API_URL, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: 'registerHours', user: user, hours: val })
-            });
-            modalHoras.hide(); setTimeout(carregarDados, 1000); alert('Sucesso!');
-        } catch(e){ alert('Erro'); } finally { btn.innerText = "Salvar"; btn.disabled = false; }
-    }
-    function salvarEdicao() {
-        const original = document.getElementById('edit-original-name').value;
-        const novoNome = document.getElementById('edit-name').value;
-        const novoTempo = document.getElementById('edit-time').value;
-        const novoPeso = document.getElementById('edit-weight').value;
-        modalEdit.hide();
-        doPost({ action: 'editTask', originalName: original, newName: novoNome, newTime: novoTempo, newWeight: novoPeso });
-        setTimeout(carregarDados, 1500);
-    }
-    function adicionarTarefa() {
-        const nome = document.getElementById('add-name').value;
-        const tempo = document.getElementById('add-time').value;
-        const peso = document.getElementById('add-weight').value;
-        if(!nome) return;
-        modalAdd.hide();
-        doPost({ action: 'addTask', taskName: nome, time: tempo, weight: peso });
-        setTimeout(carregarDados, 1500);
-    }
-    function removerTarefa(nome) {
-        if (!confirm(`Remover "${nome}"?`)) return;
-        doPost({ action: 'deleteTask', taskName: nome });
-        setTimeout(carregarDados, 1500);
-    }
-    function doPost(payload) {
-        const scoreRaf = document.getElementById('score-raf');
-        if(scoreRaf) scoreRaf.innerText = "⏳";
-        fetch(API_URL, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        }).catch(e => console.error(e));
-    }
+    function abrirModalAdd() { document.getElementById('add-name').value = ''; document.getElementById('add-time').value = ''; document.getElementById('add-weight').value = ''; modalAdd.show(); }
+    function abrirEdicao(n, t, p) { document.getElementById('edit-original-name').value = n; document.getElementById('edit-name').value = n; document.getElementById('edit-time').value = t; document.getElementById('edit-weight').value = p; modalEdit.show(); }
+    async function enviarHoras() { const u = document.getElementById('horas-user').value; const v = document.getElementById('horas-valor').value; if (!v || v <= 0) return alert('Inválido'); const b = document.querySelector('#modalHoras button'); b.innerText = "Salvar..."; b.disabled = true; try { await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) }); modalHoras.hide(); setTimeout(carregarDados, 1000); alert('Sucesso!'); } catch(e){ alert('Erro'); } finally { b.innerText = "Salvar"; b.disabled = false; } }
+    function salvarEdicao() { const o = document.getElementById('edit-original-name').value; const n = document.getElementById('edit-name').value; const t = document.getElementById('edit-time').value; const p = document.getElementById('edit-weight').value; modalEdit.hide(); doPost({ action: 'editTask', originalName: o, newName: n, newTime: t, newWeight: p }); setTimeout(carregarDados, 1500); }
+    function adicionarTarefa() { const n = document.getElementById('add-name').value; const t = document.getElementById('add-time').value; const p = document.getElementById('add-weight').value; if(!n) return; modalAdd.hide(); doPost({ action: 'addTask', taskName: n, time: t, weight: p }); setTimeout(carregarDados, 1500); }
+    function removerTarefa(n) { if (!confirm(`Remover "${n}"?`)) return; doPost({ action: 'deleteTask', taskName: n }); setTimeout(carregarDados, 1500); }
+    function doPost(p) { const s = document.getElementById('score-raf'); if(s) s.innerText = "⏳"; fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) }).catch(console.error); }
 
     carregarDados();
 </script>
