@@ -187,8 +187,7 @@
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
         } catch (e) { 
-            console.error(e);
-            alert('Erro ao carregar dados. Verifique sua internet.');
+            console.error("Falha no carregamento:", e);
         }
     }
 
