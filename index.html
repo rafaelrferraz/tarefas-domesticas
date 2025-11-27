@@ -54,9 +54,9 @@
             <div class="modal-body text-center p-4">
                 <h5 id="modal-title" class="mb-4 fw-bold">...</h5>
                 <div class="d-grid gap-2">
-                    <button onclick="enviar('Rafael')" class="btn btn-outline-primary btn-lg py-3">👱‍♂️ Rafael</button>
-                    <button onclick="enviar('Larissa')" class="btn btn-outline-danger btn-lg py-3">👩 Larissa</button>
-                    <button onclick="enviar('Lígia')" class="btn btn-secondary py-2">🧹 Lígia</button>
+                    <button onclick="enviar('Rafael', this)" class="btn btn-outline-primary btn-lg py-3">👱‍♂️ Rafael</button>
+                    <button onclick="enviar('Larissa', this)" class="btn btn-outline-danger btn-lg py-3">👩 Larissa</button>
+                    <button onclick="enviar('Lígia', this)" class="btn btn-secondary py-2">🧹 Lígia</button>
                 </div>
             </div>
         </div>
@@ -218,7 +218,19 @@
         modalAdd.show();
     }
 
-    function enviar(user) {
+    function enviar(user, btnElement) {
+        // 1. Guarda o texto original para restaurar depois
+        const textoOriginal = btnElement.innerHTML;
+        
+        // 2. Trava todos os botões do modal para evitar cliques em outros
+        const todosBotoes = document.querySelectorAll('#modalTask .modal-body button');
+        todosBotoes.forEach(btn => btn.disabled = true);
+
+        // 3. Feedback visual no botão clicado
+        btnElement.innerHTML = "Enviando... <span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>";
+        btnElement.classList.remove('btn-outline-primary', 'btn-outline-danger'); // Remove outline pra ficar sólido se quiser, ou mantém
+        btnElement.classList.add('btn-secondary'); // Opcional: deixa cinza pra mostrar estado de "ocupado"
+
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         
         doPost({ 
@@ -228,8 +240,18 @@
             score: score 
         });
         
+        // Esconde o modal. O usuário não vê mais os botões, mas eles ficam travados até o reload terminar
         modalTask.hide();
-        setTimeout(carregarDados, 500); 
+        
+        setTimeout(() => {
+            // Restaura o estado original (caso o modal seja aberto de novo sem reload da página)
+            todosBotoes.forEach(btn => btn.disabled = false);
+            btnElement.innerHTML = textoOriginal;
+            btnElement.classList.remove('btn-secondary'); // Se adicionou classe, remove aqui
+            // (Se removeu as classes de cor originais, teria que restaurar aqui, mas simplifiquei mantendo)
+            
+            carregarDados();
+        }, 1000); 
     }
 
     async function enviarHoras() {
