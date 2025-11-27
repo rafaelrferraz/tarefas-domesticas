@@ -9,22 +9,71 @@
     <meta name="theme-color" content="#0d6efd">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; padding-bottom: 100px; user-select: none; }
-        .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .task-item:active { transform: scale(0.98); background: #e9ecef; }
-        .task-blocked { pointer-events: none; opacity: 0.5; filter: grayscale(100%); background-color: #e9ecef; }
-        .task-future { background-color: #f8f9fa; border: 1px dashed #dee2e6; opacity: 0.8; }
-        .task-future .fw-medium { color: #6c757d; }
-        .score-big { font-size: 2rem; font-weight: bold; }
-        .meta-small { font-size: 0.8rem; color: #6c757d; }
-        .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
+        body { 
+            background-color: #f0f2f5; 
+            padding-bottom: 100px; 
+            user-select: none; 
+        }
+        .score-card { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 15px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+        }
+        .task-item { 
+            background: white; 
+            margin-bottom: 8px; 
+            border-radius: 10px; 
+            padding: 15px; 
+            cursor: pointer; 
+            transition: 0.1s; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        .task-item:active { 
+            transform: scale(0.98); 
+            background: #e9ecef; 
+        }
+        .task-blocked { 
+            pointer-events: none; 
+            opacity: 0.5; 
+            filter: grayscale(100%); 
+            background-color: #e9ecef; 
+        }
+        .task-future { 
+            background-color: #f8f9fa; 
+            border: 1px dashed #dee2e6; 
+            opacity: 0.8; 
+        }
+        .task-future .fw-medium { 
+            color: #6c757d; 
+        }
+        .score-big { 
+            font-size: 2rem; 
+            font-weight: bold; 
+        }
+        .meta-small { 
+            font-size: 0.8rem; 
+            color: #6c757d; 
+        }
+        .fab-hours { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 25px; 
+            font-size: 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            z-index: 1000; 
+        }
     </style>
 </head>
 <body>
 
 <div class="container mt-3">
-    <!-- PLACAR -->
     <div class="score-card mb-3">
         <div class="row text-center">
             <div class="col border-end">
@@ -40,13 +89,11 @@
         </div>
     </div>
 
-    <!-- BOTÕES FIXOS (AGORA FORA DO PLACAR PARA NÃO SUMIR) -->
     <div class="d-flex justify-content-center gap-2 mb-4">
-        <button onclick="window.location.reload(true)" class="btn btn-light text-muted border shadow-sm">🔄 Atualizar Site</button>
+        <button onclick="carregarDados()" class="btn btn-light text-muted border shadow-sm">🔄 Atualizar Site</button>
         <button onclick="abrirFaxina()" class="btn btn-light text-muted border shadow-sm">🧹 Lígia</button>
     </div>
 
-    <!-- FILTRO -->
     <div class="d-flex justify-content-between align-items-end mb-3 ms-2 me-2">
         <h6 class="text-muted mb-0">REGISTRAR TAREFA</h6>
         <div class="form-check form-switch">
@@ -55,7 +102,6 @@
         </div>
     </div>
 
-    <!-- LISTA -->
     <div id="lista-tarefas">
         <div class="text-center py-5 text-muted">Carregando tarefas...</div>
     </div>
@@ -64,7 +110,6 @@
 <button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
-<!-- MODAIS -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -83,8 +128,13 @@
 <div class="modal fade" id="modalLigia" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-light"><h5 class="modal-title fw-bold">🧹 O que a Lígia fez hoje?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body p-0"><div id="lista-ligia" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;"></div></div>
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">🧹 O que a Lígia fez hoje?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="lista-ligia" class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;"></div>
+            </div>
             <div class="modal-footer border-top-0">
                 <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Cancelar</button>
                 <button onclick="confirmarFaxina()" class="btn btn-success fw-bold px-4">CONFIRMAR FAXINA</button>
@@ -96,9 +146,14 @@
 <div class="modal fade" id="modalHoras" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Registrar Horas</h5></div>
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Horas</h5>
+            </div>
             <div class="modal-body">
-                <select id="horas-user" class="form-select mb-3"><option value="Rafael">Rafael</option><option value="Larissa">Larissa</option></select>
+                <select id="horas-user" class="form-select mb-3">
+                    <option value="Rafael">Rafael</option>
+                    <option value="Larissa">Larissa</option>
+                </select>
                 <input type="number" id="horas-valor" class="form-control mb-3" placeholder="Ex: 40">
                 <button onclick="enviarHoras()" class="btn btn-primary w-100">Salvar</button>
             </div>
@@ -106,20 +161,26 @@
     </div>
 </div>
 
-<!-- MODAL EDITAR COM FREQUENCIA -->
 <div class="modal fade" id="modalEdit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title fw-bold">✏️ Editar</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">✏️ Editar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <label class="small text-muted">Nome</label>
                 <input type="text" id="edit-name" class="form-control mb-3 fw-bold">
+                
                 <label class="small text-muted">Frequência (dias)</label>
                 <input type="number" id="edit-freq" class="form-control mb-3">
+                
                 <label class="small text-muted">Tempo (min)</label>
                 <input type="number" id="edit-time" class="form-control mb-3">
+                
                 <label class="small text-muted">Peso (pts)</label>
                 <input type="number" id="edit-weight" class="form-control mb-4">
+                
                 <input type="hidden" id="edit-original-name">
                 <button onclick="salvarEdicao()" class="btn btn-success w-100 py-2 fw-bold">SALVAR</button>
             </div>
@@ -127,11 +188,13 @@
     </div>
 </div>
 
-<!-- MODAL ADICIONAR COM FREQUENCIA -->
 <div class="modal fade" id="modalAdd" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title fw-bold">➕ Nova Tarefa</h5> <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">➕ Nova Tarefa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <input type="text" id="add-name" class="form-control mb-3 fw-bold" placeholder="Nome">
                 <input type="number" id="add-freq" class="form-control mb-3" placeholder="Frequência (dias)">
@@ -146,6 +209,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const API_URL = "https://misty-rain-cbc7.rafaelrferraz.workers.dev/";
+
     let selectedTask = null;
     let selectedWeight = 0;
     let tarefasCache = [];
@@ -158,7 +222,9 @@
     const modalAdd = new bootstrap.Modal(document.getElementById('modalAdd'));
 
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.error); });
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(console.error);
+        });
     }
 
     async function carregarDados() {
@@ -168,6 +234,7 @@
         try {
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
+            
             tarefasCache = tarefasNovas;
             bloqueioTemporario = []; 
 
@@ -182,9 +249,14 @@
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
                     const isFutura = t.status === 'futura';
+                    
                     let classes = "task-item d-flex justify-content-between align-items-center";
                     let textoExtra = "";
-                    if (isFutura) { classes += " task-future"; textoExtra = ' <span style="font-size:0.8em">📅</span>'; }
+
+                    if (isFutura) {
+                        classes += " task-future";
+                        textoExtra = ' <span style="font-size:0.8em">📅</span>';
+                    }
 
                     return `
                     <div id="${safeId}" class="${classes}" onclick="abrirTask('${t.tarefa}', ${t.peso})">
@@ -204,38 +276,56 @@
 
             const res2 = await fetch(`${API_URL}?action=getScore`);
             const score = await res2.json();
-            // Atualiza SOMENTE os números, sem apagar os botões (pois eles estão fora da div)
             document.getElementById('score-raf').innerText = score.Rafael.score;
             document.getElementById('meta-raf').innerText = (score.Rafael.meta * 100).toFixed(0) + '%';
             document.getElementById('score-lar').innerText = score.Larissa.score;
             document.getElementById('meta-lar').innerText = (score.Larissa.meta * 100).toFixed(0) + '%';
 
-        } catch (e) { console.error("Falha:", e); }
+        } catch (e) { 
+            console.error("Falha:", e); 
+        }
     }
 
     function abrirTask(nome, peso) {
         if (bloqueioTemporario.includes(nome)) return;
-        selectedTask = nome; selectedWeight = peso;
+        
+        selectedTask = nome;
+        selectedWeight = peso;
         document.getElementById('modal-title').innerText = nome;
         modalTask.show();
     }
 
     function enviar(user) {
         modalTask.hide();
+        
         if (selectedTask) {
             bloqueioTemporario.push(selectedTask);
+            
             const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
             const item = document.getElementById(safeId);
-            if (item) { item.classList.add('task-blocked'); item.classList.remove('task-future'); const txt = item.querySelector('.fw-medium'); if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>'; }
+            if (item) {
+                item.classList.add('task-blocked');
+                item.classList.remove('task-future'); 
+                const txt = item.querySelector('.fw-medium');
+                if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
+            }
         }
+        
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
-        setTimeout(() => { carregarDados(); }, 2500);
+        
+        setTimeout(() => { 
+            carregarDados(); 
+        }, 2500);
     }
 
     function abrirFaxina() {
         const pendentes = tarefasCache.filter(t => t.status === 'pendente');
-        if (pendentes.length === 0) { alert("Nada pendente hoje!"); return; }
+        if (pendentes.length === 0) { 
+            alert("Nada pendente hoje!"); 
+            return; 
+        }
+
         const divLista = document.getElementById('lista-ligia');
         divLista.innerHTML = pendentes.map(t => {
             const freq = Number(t.freq);
@@ -244,7 +334,10 @@
             return `
             <label class="list-group-item d-flex gap-3 align-items-center py-3">
                 <input class="form-check-input flex-shrink-0 fs-4" type="checkbox" value="${t.tarefa}" ${checked}>
-                <span class="pt-1 form-checked-content fw-bold">${t.tarefa}<small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small></span>
+                <span class="pt-1 form-checked-content fw-bold">
+                    ${t.tarefa}
+                    <small class="d-block text-muted fw-normal">Freq: ${freq || 'Diária'} dias</small>
+                </span>
             </label>
             `;
         }).join('');
@@ -254,52 +347,138 @@
     function confirmarFaxina() {
         const checks = document.querySelectorAll('#lista-ligia input[type="checkbox"]:checked');
         const selecionadas = Array.from(checks).map(c => c.value);
-        if (selecionadas.length === 0) { alert("Selecione pelo menos uma tarefa."); return; }
+        
+        if (selecionadas.length === 0) { 
+            alert("Selecione pelo menos uma tarefa."); 
+            return; 
+        }
+        
         if (!confirm(`Confirmar que Lígia fez ${selecionadas.length} tarefas?`)) return;
+
         modalLigia.hide();
-        const lista = document.getElementById('lista-tarefas'); lista.style.opacity = '0.3'; lista.style.pointerEvents = 'none';
-        fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: 'ligiaDay', taskNames: selecionadas }) })
-        .then(() => { setTimeout(() => { window.location.reload(true); }, 4000); }).catch(e => { alert('Erro na faxina.'); window.location.reload(true); });
+        const lista = document.getElementById('lista-tarefas');
+        lista.style.opacity = '0.3'; 
+        lista.style.pointerEvents = 'none';
+
+        fetch(API_URL, {
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: 'ligiaDay', taskNames: selecionadas })
+        })
+        .then(() => { 
+            setTimeout(() => { carregarDados(); }, 4000); 
+        })
+        .catch(e => { 
+            alert('Erro na faxina.'); 
+            carregarDados(); 
+        });
     }
 
-    function abrirModalHoras() { modalHoras.show(); }
-    function abrirModalAdd() { document.getElementById('add-name').value = ''; document.getElementById('add-freq').value = ''; document.getElementById('add-time').value = ''; document.getElementById('add-weight').value = ''; modalAdd.show(); }
-    
+    function abrirModalHoras() { 
+        modalHoras.show(); 
+    }
+
+    function abrirModalAdd() { 
+        document.getElementById('add-name').value = ''; 
+        document.getElementById('add-time').value = ''; 
+        document.getElementById('add-weight').value = ''; 
+        document.getElementById('add-freq').value = ''; 
+        modalAdd.show(); 
+    }
+
     function abrirEdicao(n, f, t, p) { 
         document.getElementById('edit-original-name').value = n; 
         document.getElementById('edit-name').value = n; 
-        document.getElementById('edit-freq').value = f; // PREENCHE FREQUÊNCIA
+        document.getElementById('edit-freq').value = f; 
         document.getElementById('edit-time').value = t; 
         document.getElementById('edit-weight').value = p; 
         modalEdit.show(); 
     }
 
-    async function enviarHoras() { const u = document.getElementById('horas-user').value; const v = document.getElementById('horas-valor').value; if (!v || v <= 0) { alert('Inválido'); return; } const b = document.querySelector('#modalHoras button'); b.innerText = "Salvar..."; b.disabled = true; try { await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) }); modalHoras.hide(); setTimeout(carregarDados, 1000); alert('Sucesso!'); } catch(e) { alert('Erro'); } finally { b.innerText = "Salvar"; b.disabled = false; } }
-    
+    async function enviarHoras() { 
+        const u = document.getElementById('horas-user').value; 
+        const v = document.getElementById('horas-valor').value; 
+        
+        if (!v || v <= 0) {
+            alert('Inválido');
+            return;
+        }
+        
+        const b = document.querySelector('#modalHoras button'); 
+        b.innerText = "Salvar..."; 
+        b.disabled = true; 
+        
+        try { 
+            await fetch(API_URL, { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify({ action: 'registerHours', user: u, hours: v }) 
+            }); 
+            modalHoras.hide(); 
+            setTimeout(carregarDados, 1000); 
+            alert('Sucesso!'); 
+        } catch(e) { 
+            alert('Erro'); 
+        } finally { 
+            b.innerText = "Salvar"; 
+            b.disabled = false; 
+        } 
+    }
+
     function salvarEdicao() { 
         const o = document.getElementById('edit-original-name').value; 
         const n = document.getElementById('edit-name').value; 
-        const f = document.getElementById('edit-freq').value; // PEGA FREQUÊNCIA
+        const f = document.getElementById('edit-freq').value;
         const t = document.getElementById('edit-time').value; 
         const p = document.getElementById('edit-weight').value; 
+        
         modalEdit.hide(); 
-        doPost({ action: 'editTask', originalName: o, newName: n, newFreq: f, newTime: t, newWeight: p }); 
+        doPost({ 
+            action: 'editTask', 
+            originalName: o, 
+            newName: n, 
+            newFreq: f, 
+            newTime: t, 
+            newWeight: p 
+        }); 
         setTimeout(carregarDados, 1500); 
     }
 
     function adicionarTarefa() { 
         const n = document.getElementById('add-name').value; 
-        const f = document.getElementById('add-freq').value; // PEGA FREQUÊNCIA
         const t = document.getElementById('add-time').value; 
         const p = document.getElementById('add-weight').value; 
+        const f = document.getElementById('add-freq').value;
+        
         if(!n) return; 
+        
         modalAdd.hide(); 
-        doPost({ action: 'addTask', taskName: n, freq: f, time: t, weight: p }); 
+        doPost({ 
+            action: 'addTask', 
+            taskName: n, 
+            time: t, 
+            weight: p,
+            freq: f 
+        }); 
         setTimeout(carregarDados, 1500); 
     }
 
-    function removerTarefa(n) { if (!confirm(`Remover "${n}"?`)) return; doPost({ action: 'deleteTask', taskName: n }); setTimeout(carregarDados, 1500); }
-    function doPost(p) { const s = document.getElementById('score-raf'); if(s) s.innerText = "⏳"; fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) }).catch(console.error); }
+    function removerTarefa(n) { 
+        if (!confirm(`Remover "${n}"?`)) return; 
+        doPost({ action: 'deleteTask', taskName: n }); 
+        setTimeout(carregarDados, 1500); 
+    }
+
+    function doPost(p) { 
+        const s = document.getElementById('score-raf'); 
+        if(s) s.innerText = "⏳"; 
+        
+        fetch(API_URL, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify(p) 
+        }).catch(console.error); 
+    }
 
     carregarDados();
 </script>
