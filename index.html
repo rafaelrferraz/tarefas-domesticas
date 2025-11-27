@@ -40,8 +40,9 @@
                 <div class="meta-small">Meta: <span id="meta-lar">-%</span></div>
             </div>
         </div>
-        <div class="text-center mt-2">
-            <button onclick="window.location.reload(true)" class="btn btn-sm btn-light text-muted">🔄 Atualizar Site</button>
+        <div class="text-center mt-2 d-flex justify-content-center gap-2">
+            <button onclick="window.location.reload(true)" class="btn btn-sm btn-light text-muted border">🔄 Atualizar Site</button>
+            <button onclick="diaDeFaxina()" class="btn btn-sm btn-light text-muted border">🧹 Lígia Day</button>
         </div>
     </div>
 
@@ -49,7 +50,7 @@
         <h6 class="text-muted mb-0">REGISTRAR TAREFA</h6>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="toggleFuturas" onchange="carregarDados()">
-            <label class="form-check-label small text-muted" for="toggleFuturas">Ver futuras</label>
+            <label class="form-check-label small text-muted" for="toggleFuturas">Ver todas</label>
         </div>
     </div>
 
@@ -128,8 +129,6 @@
 
     let selectedTask = null;
     let selectedWeight = 0;
-    
-    // Cache local de tarefas para o filtro funcionar sem re-fetch
     let tarefasCache = [];
     let tarefasBloqueadas = []; 
     
@@ -140,13 +139,11 @@
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW registrado!'))
-                .catch(err => console.log('SW falhou:', err));
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW falhou:', err));
         });
     }
 
-        async function carregarDados() {
+    async function carregarDados() {
         const div = document.getElementById('lista-tarefas');
         const mostrarFuturas = document.getElementById('toggleFuturas').checked;
 
@@ -154,30 +151,16 @@
             const res1 = await fetch(`${API_URL}?action=getTasks`);
             const tarefasNovas = await res1.json();
             
-            // LIMPEZA DA LISTA NEGRA INTELIGENTE
-            // Se uma tarefa estava bloqueada, mas agora veio do servidor como "futura"
-            // (significa que o processamento acabou e ela foi agendada),
-            // então podemos removê-la da lista negra para ela destravar.
-            // Mas se ela ainda vier como "pendente", mantemos o bloqueio.
-            
-            // Filtramos a lista negra removendo quem já virou 'futura' na lista nova
+            // Limpeza inteligente da lista negra (remove quem já foi processado e virou futura)
             tarefasBloqueadas = tarefasBloqueadas.filter(nomeBloqueado => {
                 const tarefaNaLista = tarefasNovas.find(t => t.tarefa === nomeBloqueado);
-                
-                // Se não achou na lista (sumiu), pode remover do bloqueio.
-                if (!tarefaNaLista) return false;
-                
-                // Se achou e virou futura, pode remover do bloqueio.
-                if (tarefaNaLista.status === 'futura') return false;
-                
-                // Se achou e continua pendente, MANTÉM bloqueado (ainda não processou).
-                return true;
+                if (!tarefaNaLista) return false; // Sumiu da lista
+                if (tarefaNaLista.status === 'futura') return false; // Processou
+                return true; // Ainda pendente (mantém bloqueio)
             });
 
-            // Atualiza cache
             tarefasCache = tarefasNovas;
             
-            // Filtragem de Exibição
             const listaExibicao = tarefasCache.filter(t => {
                 if (mostrarFuturas) return true;
                 return t.status === 'pendente';
@@ -188,7 +171,6 @@
             } else {
                 div.innerHTML = listaExibicao.map(t => {
                     const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
-                    
                     const estaBloqueada = tarefasBloqueadas.includes(t.tarefa);
                     const isFutura = t.status === 'futura';
                     
@@ -232,7 +214,6 @@
         }
     }
 
-
     function abrirTask(nome, peso) {
         if (tarefasBloqueadas.includes(nome)) return;
         selectedTask = nome;
@@ -249,19 +230,42 @@
             const item = document.getElementById(safeId);
             if (item) {
                 item.classList.add('task-blocked');
-                item.classList.remove('task-future'); // Remove estilo de futura se for o caso
+                item.classList.remove('task-future'); 
                 const txt = item.querySelector('.fw-medium');
                 if(txt) txt.innerHTML += ' <small class="text-muted fst-italic">(Processando...)</small>';
             }
         }
-        
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         doPost({ action: 'registerTask', taskName: selectedTask, user: user, score: score });
-        
         setTimeout(() => { carregarDados(); }, 2500);
     }
 
-    // Funções Auxiliares (Iguais à versão simplificada anterior)
+    function diaDeFaxina() {
+        if (!confirm("DIÁRIA DA LÍGIA?\n\nIsso vai marcar TODAS as tarefas pendentes como feitas pela Lígia (0 pontos) e reagendar as datas.")) {
+            return;
+        }
+        const btns = document.querySelectorAll('.score-card button');
+        btns.forEach(b => b.disabled = true);
+        const lista = document.getElementById('lista-tarefas');
+        lista.style.opacity = '0.3';
+        lista.style.pointerEvents = 'none';
+
+        fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: 'ligiaDay' })
+        })
+        .then(() => {
+            setTimeout(() => { window.location.reload(true); }, 4000);
+        })
+        .catch(e => {
+            alert('Erro na faxina.');
+            lista.style.opacity = '1';
+            lista.style.pointerEvents = 'auto';
+            btns.forEach(b => b.disabled = false);
+        });
+    }
+
     function abrirModalHoras() { modalHoras.show(); }
     function abrirModalAdd() { 
         document.getElementById('add-name').value = ''; 
