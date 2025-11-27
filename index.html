@@ -13,6 +13,8 @@
         .score-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .task-item { background: white; margin-bottom: 8px; border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-item:active { transform: scale(0.98); background: #e9ecef; }
+        /* Classe para tarefa bloqueada (já enviada) */
+        .task-blocked { pointer-events: none; opacity: 0.4; filter: grayscale(100%); }
         .score-big { font-size: 2rem; font-weight: bold; }
         .meta-small { font-size: 0.8rem; color: #6c757d; }
         .fab-hours { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; }
@@ -48,6 +50,7 @@
 <button class="btn btn-success fab-hours" style="right: 80px;" onclick="abrirModalAdd()">➕</button>
 <button class="btn btn-primary fab-hours" onclick="abrirModalHoras()">⏱️</button>
 
+<!-- Modal de Registro de Tarefa -->
 <div class="modal fade" id="modalTask" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -152,8 +155,11 @@
             if(tarefas.length === 0) {
                 div.innerHTML = '<div class="text-center py-5 text-muted">Tudo feito por hoje! 🎉</div>';
             } else {
-                div.innerHTML = tarefas.map(t => `
-                    <div class="task-item d-flex justify-content-between align-items-center" 
+                // GERA UM ID ÚNICO PARA CADA TAREFA baseada no nome
+                div.innerHTML = tarefas.map(t => {
+                    const safeId = 'task-' + t.tarefa.replace(/[^a-zA-Z0-9]/g, '');
+                    return `
+                    <div id="${safeId}" class="task-item d-flex justify-content-between align-items-center" 
                          onclick="abrirTask('${t.tarefa}', ${t.peso})">
                         
                         <div class="d-flex align-items-center">
@@ -174,7 +180,7 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             const res2 = await fetch(`${API_URL}?action=getScore`);
@@ -188,10 +194,13 @@
 
         } catch (e) { 
             console.error("Falha no carregamento:", e);
+            // Alert removido para não incomodar
         }
     }
 
     function abrirTask(nome, peso) {
+        // Se a tarefa estiver bloqueada (classe task-blocked), não abre
+        // (Já é garantido pelo CSS pointer-events:none, mas segurança extra)
         selectedTask = nome;
         selectedWeight = peso;
         document.getElementById('modal-title').innerText = nome;
@@ -218,20 +227,35 @@
     }
 
     function enviar(user, btnElement) {
-        // 1. Guarda o texto original para restaurar depois
         const textoOriginal = btnElement.innerHTML;
         
-        // 2. Trava todos os botões do modal para evitar cliques em outros
+        // 1. BLOQUEIO SELETIVO: Acha a tarefa na lista de fundo e bloqueia ELA
+        if (selectedTask) {
+            const safeId = 'task-' + selectedTask.replace(/[^a-zA-Z0-9]/g, '');
+            const itemNaLista = document.getElementById(safeId);
+            
+            if (itemNaLista) {
+                // Adiciona classe que deixa cinza e impossível de clicar
+                itemNaLista.classList.add('task-blocked');
+                
+                // Opcional: Feedback visual no texto da tarefa
+                const textoTarefa = itemNaLista.querySelector('.fw-medium');
+                if(textoTarefa) textoTarefa.innerHTML += ' <small class="text-muted fst-italic">(Registrando...)</small>';
+            }
+        }
+
+        // 2. Trava os botões do modal (para evitar clique duplo no botão de enviar)
         const todosBotoes = document.querySelectorAll('#modalTask .modal-body button');
         todosBotoes.forEach(btn => btn.disabled = true);
 
         // 3. Feedback visual no botão clicado
         btnElement.innerHTML = "Enviando... <span class='spinner-border spinner-border-sm' role='status' aria-hidden='true'></span>";
-        btnElement.classList.remove('btn-outline-primary', 'btn-outline-danger'); // Remove outline pra ficar sólido se quiser, ou mantém
-        btnElement.classList.add('btn-secondary'); // Opcional: deixa cinza pra mostrar estado de "ocupado"
+        btnElement.classList.remove('btn-outline-primary', 'btn-outline-danger'); 
+        btnElement.classList.add('btn-secondary'); 
 
         const score = (user === 'Lígia') ? 0 : selectedWeight;
         
+        // 4. Envia para o servidor
         doPost({ 
             action: 'registerTask', 
             taskName: selectedTask, 
@@ -239,16 +263,16 @@
             score: score 
         });
         
-        // Esconde o modal. O usuário não vê mais os botões, mas eles ficam travados até o reload terminar
-        modalTask.hide();
-        
+        // 5. Fecha o modal com um leve delay para o usuário ver que deu certo
         setTimeout(() => {
-            // Restaura o estado original (caso o modal seja aberto de novo sem reload da página)
+            modalTask.hide();
+            
+            // Restaura os botões do modal para a próxima vez
             todosBotoes.forEach(btn => btn.disabled = false);
             btnElement.innerHTML = textoOriginal;
-            btnElement.classList.remove('btn-secondary'); // Se adicionou classe, remove aqui
-            // (Se removeu as classes de cor originais, teria que restaurar aqui, mas simplifiquei mantendo)
+            btnElement.classList.remove('btn-secondary');
             
+            // A tarefa na lista CONTINUA bloqueada até o carregarDados rodar e redesenhar tudo
             carregarDados();
         }, 1000); 
     }
@@ -373,6 +397,8 @@
             body: JSON.stringify(payload)
         })
         .then(() => {
+            // O carregarDados já é chamado no final de cada função específica
+            // mas mantemos aqui como fallback de segurança
             setTimeout(carregarDados, 1500);
         })
         .catch(e => {
